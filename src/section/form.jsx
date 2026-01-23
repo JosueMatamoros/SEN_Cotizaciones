@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-
 import Field from "../components/form/Field";
 import Tabs from "../components/form/Tabs";
 import Accordion from "../components/form/Accordion";
@@ -10,39 +8,28 @@ import ItemsSection from "../components/form/ItemsSection";
 import CustomSelect from "../components/form/CustomSelect";
 import Toggle from "../components/form/Toggle";
 
-export default function FormSection() {
-  const [tab, setTab] = useState("cliente");
-  const [asesorOpen, setAsesorOpen] = useState(false);
-
-  const [cliente, setCliente] = useState({
-    nombre: "",
-    numero: "",
-    correo: "",
-    direccion: "",
-  });
-
-  const [empresa, setEmpresa] = useState({
-    nombreEmpresa: "",
-    correo: "",
-    direccion: "",
-    numeroEmpresa: "",
-    asesorNombre: "",
-    asesorNumero: "",
-  });
-
-  const [productos, setProductos] = useState([
-    { id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" },
-  ]);
-
-  const [servicios, setServicios] = useState([
-    { id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" },
-  ]);
-
-  // Detalles de cotización
-  const [moneda, setMoneda] = useState("CRC");
-  const [tipoCambio, setTipoCambio] = useState("");
-  const [aplicarIVA, setAplicarIVA] = useState(false);
-
+export default function FormSection({
+  tab,
+  setTab,
+  asesorOpen,
+  setAsesorOpen,
+  cliente,
+  setCliente,
+  empresa,
+  setEmpresa,
+  productos,
+  setProductos,
+  servicios,
+  setServicios,
+  moneda,
+  setMoneda,
+  tipoCambio,
+  setTipoCambio,
+  aplicarIVA,
+  setAplicarIVA,
+  nota,
+  setNota,
+}) {
   return (
     <section className="w-full p-6">
       <div className="mx-auto w-full max-w-5xl space-y-8">
@@ -99,17 +86,13 @@ export default function FormSection() {
                   label="Nombre empresa"
                   placeholder="Razón social"
                   value={empresa.nombreEmpresa}
-                  onChange={(v) =>
-                    setEmpresa((s) => ({ ...s, nombreEmpresa: v }))
-                  }
+                  onChange={(v) => setEmpresa((s) => ({ ...s, nombreEmpresa: v }))}
                 />
                 <Field
                   label="Número empresa"
                   placeholder="+506 8888-8888"
                   value={empresa.numeroEmpresa}
-                  onChange={(v) =>
-                    setEmpresa((s) => ({ ...s, numeroEmpresa: v }))
-                  }
+                  onChange={(v) => setEmpresa((s) => ({ ...s, numeroEmpresa: v }))}
                   type="tel"
                 />
                 <Field
@@ -137,20 +120,14 @@ export default function FormSection() {
                         label="Nombre del asesor"
                         placeholder="Nombre del asesor"
                         value={empresa.asesorNombre}
-                        onChange={(v) =>
-                          setEmpresa((s) => ({ ...s, asesorNombre: v }))
-                        }
+                        onChange={(v) => setEmpresa((s) => ({ ...s, asesorNombre: v }))}
                       />
                       <Field
                         label="Número del asesor"
                         placeholder="+506 8888-8888"
                         value={empresa.asesorNumero}
-                        onChange={(v) =>
-                          setEmpresa((s) => ({ ...s, asesorNumero: v }))
-                        }
+                        onChange={(v) => setEmpresa((s) => ({ ...s, asesorNumero: v }))}
                         type="tel"
-                        pattern="^\+506\s\d{4}-\d{4}$"
-                        title="Formato: +506 8888-8888"
                       />
                     </div>
                   </Accordion>
@@ -186,6 +163,7 @@ export default function FormSection() {
               <label className="block mb-2 text-sm font-medium text-slate-700">Moneda</label>
               <CustomSelect value={moneda} onChange={setMoneda} />
             </div>
+
             <div className="w-full md:w-1/3">
               <label className="block mb-2 text-sm font-medium text-slate-700">Tipo de cambio</label>
               <div className="relative w-full">
@@ -200,16 +178,20 @@ export default function FormSection() {
                 />
               </div>
             </div>
+
             <div className="w-full md:w-1/3 flex flex-col items-center md:items-start">
               <label className="block mb-2 text-sm font-medium text-slate-700">Aplicar IVA</label>
               <Toggle checked={aplicarIVA} onChange={setAplicarIVA} />
             </div>
           </div>
         </Card>
+
         <Card title="Notas" className="mt-8" icon={<PencilLine size={20} />}>
           <textarea
             className="w-full min-h-30 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700  focus:ring-4 focus:ring-cyan-100"
             placeholder="Escribe aquí tus notas..."
+            value={nota}
+            onChange={e => setNota(e.target.value)}
           />
         </Card>
       </div>
