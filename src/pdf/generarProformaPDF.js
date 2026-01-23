@@ -117,6 +117,7 @@ export async function generarProformaPDF({
     mail: await svgToPngDataUrl("/assets/icons/mail.svg", iconRaster),
     location: await svgToPngDataUrl("/assets/icons/location.svg", iconRaster),
     web: await svgToPngDataUrl("/assets/icons/web.svg", iconRaster),
+    asesor: await svgToPngDataUrl("/assets/icons/asesor.svg", iconRaster),
   };
 
   const headerH = 175;
@@ -225,7 +226,7 @@ export async function generarProformaPDF({
     });
   };
 
-  const drawCompactCard = (x, y, title, lines) => {
+  const drawCompactCard = (x, y, title, lines, asesorData) => {
     doc.setFillColor(230, 238, 245);
     doc.roundedRect(x + 3, y + 4, cardW, cardH, 14, 14, "F");
 
@@ -262,6 +263,34 @@ export async function generarProformaPDF({
       doc.text(fitText(doc, row.text, maxTextW - 18), textX + 22, yy);
       yy += 19;
     }
+
+    // Dibujar asesor si existe
+    if (asesorData && (asesorData.nombre || asesorData.numero)) {
+      const asesorY = yy;
+      const iconSize = 14;
+      const spacing = 8;
+
+      // Icono de asesor
+      doc.addImage(icons.asesor, "PNG", textX, asesorY - 11, iconSize, iconSize);
+
+      let currentX = textX + iconSize + spacing;
+
+      // Nombre del asesor (si existe)
+      if (asesorData.nombre) {
+        doc.setFontSize(11.2);
+        const nombreWidth = doc.getTextWidth(asesorData.nombre);
+        doc.text(asesorData.nombre, currentX, asesorY);
+        currentX += nombreWidth + spacing + 4;
+      }
+
+      // Icono de teléfono y número del asesor (si existe)
+      if (asesorData.numero) {
+        doc.addImage(icons.phone, "PNG", currentX, asesorY - 11, iconSize, iconSize);
+        currentX += iconSize + spacing;
+        doc.setFontSize(11.2);
+        doc.text(fitText(doc, asesorData.numero, maxTextW - (currentX - textX)), currentX, asesorY);
+      }
+    }
   };
 
   const drawCards = () => {
@@ -277,16 +306,20 @@ export async function generarProformaPDF({
       receptorFinal?.direccion ? { icon: icons.location, text: safe(receptorFinal.direccion) } : null,
     ].filter(Boolean);
 
+    let asesorData = null;
     if (receptorFinal?.tipo === "empresa") {
       const asesorNombre = safe(receptorFinal.asesorNombre).trim();
       const asesorNumero = safe(receptorFinal.asesorNumero).trim();
-
-      if (asesorNombre) receptorLines.push({ text: `Asesor: ${asesorNombre}` });
-      if (asesorNumero) receptorLines.push({ icon: icons.phone, text: asesorNumero });
+      if (asesorNombre || asesorNumero) {
+        asesorData = {
+          nombre: asesorNombre || null,
+          numero: asesorNumero || null
+        };
+      }
     }
 
     drawCompactCard(marginX, yCards, empresa.nombre, empresaLines);
-    drawCompactCard(marginX + cardW + gap, yCards, safe(receptorFinal?.nombre), receptorLines);
+    drawCompactCard(marginX + cardW + gap, yCards, safe(receptorFinal?.nombre), receptorLines, asesorData);
   };
 
   const rows = items.map((it) => [
