@@ -356,20 +356,23 @@ export async function generarProformaPDF({
     },
   });
 
-  const bottomLimit = pageH - footerH - 30;
-  const lastY = doc.lastAutoTable.finalY;
-  const need = 210;
+  const tableEndY = doc.lastAutoTable ? doc.lastAutoTable.finalY : yTable;
+  const paddingAfterTable = 100;
 
-  if (bottomLimit - lastY < need) {
+  const notesH = 168;
+  const totalsH = 170;
+  const blockH = Math.max(notesH, totalsH);
+  const bottomLimit = pageH - footerH - 30;
+
+  let yNotesTotals = tableEndY + paddingAfterTable;
+
+  if (yNotesTotals + blockH > bottomLimit) {
     doc.addPage();
     drawHeader();
     drawHeaderFechaHora();
+    yNotesTotals = headerH + 40;
   }
 
-  const yNotesTotals = Math.min(
-    pageH - footerH - 250,
-    doc.lastAutoTable ? doc.lastAutoTable.finalY + 24 : yTable + 24,
-  );
   drawNotesTotals(yNotesTotals);
 
   const totalPages = doc.getNumberOfPages();
