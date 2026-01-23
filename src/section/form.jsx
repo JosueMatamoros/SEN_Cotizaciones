@@ -46,7 +46,6 @@ export default function FormSection() {
   return (
     <section className="w-full p-6">
       <div className="mx-auto w-full max-w-5xl space-y-8">
-        {/* ...existing code... */}
         <Card title="Datos" icon={<User size={20} />}>
           <Tabs value={tab} onChange={setTab} />
 
@@ -72,8 +71,6 @@ export default function FormSection() {
                   value={cliente.numero}
                   onChange={(v) => setCliente((s) => ({ ...s, numero: v }))}
                   type="tel"
-                  pattern="^\+506\s\d{4}-\d{4}$"
-                  title="Formato: +506 8888-8888"
                 />
                 <Field
                   label="Correo"
@@ -85,8 +82,8 @@ export default function FormSection() {
                 <Field
                   label="Dirección exacta"
                   placeholder="Provincia, cantón, distrito, señas exactas"
-                  value={empresa.direccion}
-                  onChange={(v) => setEmpresa((s) => ({ ...s, direccion: v }))}
+                  value={cliente.direccion}
+                  onChange={(v) => setCliente((s) => ({ ...s, direccion: v }))}
                 />
               </motion.div>
             ) : (
@@ -114,8 +111,6 @@ export default function FormSection() {
                     setEmpresa((s) => ({ ...s, numeroEmpresa: v }))
                   }
                   type="tel"
-                  pattern="^\+506\s\d{4}-\d{4}$"
-                  title="Formato: +506 8888-8888"
                 />
                 <Field
                   label="Correo"
@@ -198,7 +193,7 @@ export default function FormSection() {
                 <input
                   type="text"
                   value={tipoCambio}
-                  onChange={(e) => setTipoCambio(e.target.value.replace(/[^\d.]/g, ""))}
+                  onChange={(e) => setTipoCambio(e.target.value.replace(/\D/g, ""))}
                   disabled={moneda !== "USD"}
                   placeholder="520"
                   className="w-full rounded-md border border-slate-200 bg-white pl-8 pr-4 py-2 text-sm text-slate-700 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
