@@ -15,8 +15,9 @@ function fmtCRC(n) {
   const fixed = x.toFixed(2);
   const parts = fixed.split(".");
   const int = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  if (parts[1] === "00") return `₡${int}`;
-  return `₡${int}.${parts[1]}`;
+  const prefix = "¢";
+  if (parts[1] === "00") return `${prefix}${int}`;
+  return `${prefix}${int}.${parts[1]}`;
 }
 
 async function toDataUrl(url) {
@@ -100,6 +101,10 @@ export async function generarProformaPDF({
   const textoOscuro = [15, 50, 70];
   const blanco = [255, 255, 255];
 
+  const azulNota = [64, 155, 201];
+  const azulTotal = [70, 160, 210];
+  const azulTotalClaro = [220, 235, 245];
+
   const headerImg = await toDataUrl("/assets/header-sen.png");
   const footerImg = await toDataUrl("/assets/footer-sen.png");
 
@@ -112,7 +117,6 @@ export async function generarProformaPDF({
     location: await svgToPngDataUrl("/assets/icons/location.svg", iconRaster),
     web: await svgToPngDataUrl("/assets/icons/web.svg", iconRaster),
   };
-
 
   const headerH = 175;
   const footerH = 90;
@@ -198,21 +202,43 @@ export async function generarProformaPDF({
   };
 
   const drawHeaderFechaHora = () => {
-    const f = safe(fechaTexto).trim();
-    const p = safe(numeroProforma).trim();
+    const fecha = safe(fechaTexto).trim();
+    const proforma = safe(numeroProforma).trim();
 
-    const y = 140;
-    const gapHeader = 178;
-
+    const y = 142;
+    const xLeft = 266;
     const xRight = pageW - 40;
-    const xLeft = xRight - gapHeader;
+
+    const azulClaroLabel = [90, 190, 225];
+    const azulOscuroProforma = [44, 95, 122];
+    const negro = [20, 20, 20];
+
+    const label = "Fecha:";
+
+
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12.5);
+
+    doc.setTextColor(...azulClaroLabel);
+    doc.text(label, xLeft, y);
+
+    const wLabel = doc.getTextWidth(label);
+
+    doc.setTextColor(...negro);
+    const fechaFit = fitText(doc, fecha, 260);
+    doc.text(` ${fechaFit}`, xLeft + wLabel, y);
+
+    const leftBlock = `${label} ${fechaFit}`;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(...textoOscuro);
+    doc.setTextColor(...azulOscuroProforma);
 
-    doc.text(fitText(doc, f, 180), xLeft, y, { align: "right" });
-    doc.text(fitText(doc, p, 160), xRight, y, { align: "right" });
+    const proformaText = `${proforma}`;
+    const maxProformaW = xRight - xLeft - doc.getTextWidth(leftBlock);
+    const proformaFit = fitText(doc, proformaText, Math.max(120, maxProformaW));
+
+    doc.text(`${proformaFit}`, xRight, y, { align: "right" });
   };
 
   const drawFooter = (pageNum, pageCount) => {
@@ -305,20 +331,39 @@ export async function generarProformaPDF({
     const rightX = marginX + leftW + gap;
     const rowW = pageW - rightX - marginX;
 
-    doc.setFillColor(...blanco);
-    doc.setDrawColor(220, 230, 240);
-    doc.setLineWidth(1.2);
-    doc.roundedRect(marginX, startY, leftW, 148, 12, 12, "FD");
+    const grisBorde = [210, 210, 210];
+    const grisTexto = [90, 90, 90];
+    const negroSuave = [30, 30, 30];
 
-    doc.setFillColor(...azulClaro);
-    doc.roundedRect(marginX, startY, leftW, 34, 12, 12, "F");
+    const padL = 16;
+    const padR = 16;
 
-    doc.setTextColor(...azulOscuro);
+    const drawRightFitted = (text, xRight, y, maxW, baseSize, minSize) => {
+      const t = safe(text);
+      let size = baseSize;
+      doc.setFontSize(size);
+      while (size > minSize && doc.getTextWidth(t) > maxW) {
+        size -= 0.5;
+        doc.setFontSize(size);
+      }
+      doc.text(t, xRight, y, { align: "right" });
+      doc.setFontSize(baseSize);
+    };
+
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...grisBorde);
+    doc.setLineWidth(1);
+    doc.roundedRect(marginX, startY, leftW, 148, 10, 10, "FD");
+
+    doc.setFillColor(...azulTotalClaro);
+    doc.roundedRect(marginX, startY, leftW, 34, 10, 10, "F");
+
+    doc.setTextColor(...azulNota);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text("NOTAS", marginX + 16, startY + 24);
+    doc.text("NOTAS", marginX + 16, startY + 23);
 
-    doc.setTextColor(...textoOscuro);
+    doc.setTextColor(...grisTexto);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
 
@@ -330,35 +375,39 @@ export async function generarProformaPDF({
 
     const drawTotalRow = (y, label, value, isFinal) => {
       if (isFinal) {
-        doc.setFillColor(...azulOscuro);
-        doc.roundedRect(rightX, y, rowW, 46, 12, 12, "F");
+        doc.setFillColor(...azulTotal);
+        doc.roundedRect(rightX, y, rowW, 44, 8, 8, "F");
 
-        doc.setTextColor(...blanco);
+        doc.setTextColor(255, 255, 255);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
-        doc.text(label, rightX + 16, y + 30);
-        doc.text(value, rightX + rowW - 16, y + 30, { align: "right" });
+
+        doc.text(label, rightX + padL, y + 28);
+
+        const labelW = doc.getTextWidth(label);
+        const maxWVal = rowW - padL - padR - labelW - 12;
+        const xVal = rightX + rowW - padR;
+
+        drawRightFitted(value, xVal, y + 28, maxWVal, 14, 10);
         return;
       }
 
-      doc.setFillColor(...blanco);
-      doc.setDrawColor(220, 230, 240);
-      doc.setLineWidth(1.2);
-      doc.roundedRect(rightX, y, rowW, 42, 12, 12, "FD");
-
-      doc.setFillColor(...azulPrimario);
-      doc.rect(rightX, y + 10, 4, 22, "F");
-
-      doc.setTextColor(...textoOscuro);
+      doc.setTextColor(...negroSuave);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12.5);
-      doc.text(label, rightX + 14, y + 27);
-      doc.text(value, rightX + rowW - 14, y + 27, { align: "right" });
+
+      doc.text(label, rightX + 6, y + 24);
+
+      const labelW = doc.getTextWidth(label);
+      const maxWVal = rowW - 6 - 6 - labelW - 10;
+      const xVal = rightX + rowW - 6;
+
+      drawRightFitted(value, xVal, y + 24, maxWVal, 12.5, 9);
     };
 
-    drawTotalRow(startY + 2, "SUBTOTAL:", fmtCRC(subtotal), false);
-    drawTotalRow(startY + 50, "IVA (13%):", fmtCRC(iva), false);
-    drawTotalRow(startY + 98, "TOTAL:", fmtCRC(total), true);
+    drawTotalRow(startY + 6, "SUBTOTAL:", fmtCRC(subtotal), false);
+    drawTotalRow(startY + 42, "IVA (13%):", fmtCRC(iva), false);
+    drawTotalRow(startY + 78, "TOTAL:", fmtCRC(total), true);
   };
 
   drawHeader();
