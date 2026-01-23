@@ -28,6 +28,7 @@ function formatMoney(amount, currency) {
 
 export default function ItemsSection({
   title,
+  icon,
   addLabel,
   items,
   setItems,
@@ -52,6 +53,7 @@ export default function ItemsSection({
   return (
     <Card
       title={title}
+      icon={icon}
       action={
         <button
           type="button"
@@ -59,7 +61,7 @@ export default function ItemsSection({
           className="inline-flex h-10 items-center rounded-lg bg-cyan-400 px-3 lg:px-5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-cyan-300 gap-2 "
         >
           <Plus size={20} className="shrink-0" />
-          <span className="hidden lg:inline ">{addLabel}</span>
+          <span className="hidden sm:inline ">{addLabel}</span>
         </button>
       }
     >
@@ -97,13 +99,12 @@ export default function ItemsSection({
                 <div className="flex items-end gap-3">
                   <div className="flex-1">
                     <CurrencyInput
-                      label={<span className="xl:inline hidden">Precio unitario</span>}
+                      label="Precio unitario"
                       placeholder="0"
                       value={it.precioUnitario}
                       onChange={(v) => updateItem(it.id, { precioUnitario: v })}
                       currency={currency}
                       currencySymbol={currencySymbol}
-                      labelAlt={<span className="xl:hidden inline">Precio</span>}
                     />
                   </div>
 

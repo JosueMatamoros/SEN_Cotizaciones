@@ -5,6 +5,7 @@ import Field from "../components/form/Field";
 import Tabs from "../components/form/Tabs";
 import Accordion from "../components/form/Accordion";
 import Card from "../components/form/Card";
+import { User, Box, Wrench, PencilLine, FileText } from "../utils/icons";
 import ItemsSection from "../components/form/ItemsSection";
 import CustomSelect from "../components/form/CustomSelect";
 import Toggle from "../components/form/Toggle";
@@ -46,7 +47,7 @@ export default function FormSection() {
     <section className="w-full p-6">
       <div className="mx-auto w-full max-w-5xl space-y-8">
         {/* ...existing code... */}
-        <Card title="Datos">
+        <Card title="Datos" icon={<User size={20} />}>
           <Tabs value={tab} onChange={setTab} />
 
           <AnimatePresence mode="wait" initial={false}>
@@ -166,6 +167,7 @@ export default function FormSection() {
 
         <ItemsSection
           title="Productos"
+          icon={<Box size={22} strokeWidth={2.2} className="drop-shadow-sm" />}
           addLabel="Agregar Producto"
           items={productos}
           setItems={setProductos}
@@ -175,6 +177,7 @@ export default function FormSection() {
 
         <ItemsSection
           title="Servicios"
+          icon={<Wrench size={22} strokeWidth={2.2} className="drop-shadow-sm" />}
           addLabel="Agregar Servicio"
           items={servicios}
           setItems={setServicios}
@@ -182,7 +185,7 @@ export default function FormSection() {
           currency="CRC"
         />
 
-        <Card title="Detalles de cotización" className="mt-8">
+        <Card title="Detalles de cotización" className="mt-8" icon={<FileText size={20} />}>
           <div className="flex flex-col md:flex-row gap-6 items-center justify-around">
             <div className="w-full md:w-1/3">
               <label className="block mb-2 text-sm font-medium text-slate-700">Moneda</label>
@@ -208,7 +211,7 @@ export default function FormSection() {
             </div>
           </div>
         </Card>
-        <Card title="Notas" className="mt-8">
+        <Card title="Notas" className="mt-8" icon={<PencilLine size={20} />}>
           <textarea
             className="w-full min-h-30 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700  focus:ring-4 focus:ring-cyan-100"
             placeholder="Escribe aquí tus notas..."
