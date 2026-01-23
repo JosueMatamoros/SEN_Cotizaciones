@@ -1,8 +1,8 @@
 import QuotePreview from "../components/preview/QuotePreview";
+
 export default function PreviewSection({
   tab,
-  cliente,
-  empresa,
+  receptor,
   productos,
   servicios,
   moneda,
@@ -12,11 +12,10 @@ export default function PreviewSection({
 }) {
   return (
     <section className="w-full p-6 ">
-
       <div className="mx-auto w-full">
         <QuotePreview
-          empresa={empresa}
-          cliente={cliente}
+          tab={tab}
+          receptor={receptor}
           productos={productos}
           servicios={servicios}
           moneda={moneda}

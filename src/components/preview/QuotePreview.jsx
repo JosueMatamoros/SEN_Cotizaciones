@@ -1,4 +1,4 @@
-import { Building2, User, Mail, Phone, Globe } from "lucide-react";
+import { Mail, Phone, Globe, MapPin, User } from "lucide-react";
 
 function toNumber(value) {
   if (value === "" || value === null || value === undefined) return 0;
@@ -9,6 +9,11 @@ function toNumber(value) {
 function toInt(value, fallback = 1) {
   const n = Math.trunc(toNumber(value));
   return n >= 1 ? n : fallback;
+}
+
+function getTipoCambio(value, fallback = 520) {
+  const n = toNumber(value);
+  return n > 0 ? n : fallback;
 }
 
 function formatMoney(amount, currency) {
@@ -27,20 +32,18 @@ function formatMoney(amount, currency) {
 function normalizeItems(productos = [], servicios = []) {
   const p = productos.map((it) => ({
     id: it.id,
-    tipo: "Producto",
     nombre: it.nombre ?? "",
     detalle: it.detalle ?? "",
     cantidad: toInt(it.cantidad, 1),
-    precioUnitario: toNumber(it.precioUnitario),
+    precioUnitarioCRC: toNumber(it.precioUnitario),
   }));
 
   const s = servicios.map((it) => ({
     id: it.id,
-    tipo: "Servicio",
     nombre: it.nombre ?? "",
     detalle: it.detalle ?? "",
     cantidad: toInt(it.cantidad, 1),
-    precioUnitario: toNumber(it.precioUnitario),
+    precioUnitarioCRC: toNumber(it.precioUnitario),
   }));
 
   return [...p, ...s].filter((x) => x.nombre.trim() !== "");
@@ -69,8 +72,7 @@ function HeaderCard({ title, children }) {
 }
 
 export default function QuotePreview({
-  empresa,
-  cliente,
+  receptor,
   productos,
   servicios,
   moneda = "CRC",
@@ -81,16 +83,23 @@ export default function QuotePreview({
 }) {
   const items = normalizeItems(productos, servicios);
 
-  const subtotal = items.reduce(
-    (acc, it) => acc + it.precioUnitario * it.cantidad,
+  const tipoCambioFinal = getTipoCambio(tipoCambio, 520);
+  const isUSD = moneda === "USD";
+
+  const convert = (amountCRC) => (isUSD ? amountCRC / tipoCambioFinal : amountCRC);
+  const currencyToShow = isUSD ? "USD" : "CRC";
+
+  const subtotalCRC = items.reduce(
+    (acc, it) => acc + it.precioUnitarioCRC * it.cantidad,
     0,
   );
 
+  const subtotal = convert(subtotalCRC);
   const iva = aplicarIVA ? subtotal * ivaRate : 0;
   const total = subtotal + iva;
 
-  const tipoCambioNum = toNumber(tipoCambio);
-  const showTipoCambio = moneda === "USD" && tipoCambioNum > 0;
+  const receptorTitle = receptor?.tipo === "empresa" ? "EMPRESA" : "CLIENTE";
+  const receptorNombre = receptor?.nombre?.trim() || "Nombre del cliente";
 
   return (
     <div className="w-full rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -104,34 +113,42 @@ export default function QuotePreview({
                 </div>
                 <div className="mt-3 space-y-2">
                   <InfoLine icon={<Phone size={18} />} text="61350349" />
-                  <InfoLine
-                    icon={<Mail size={18} />}
-                    text="solusioneselectricas@gmail.com"
-                  />
-                  <InfoLine
-                    icon={<Globe size={18} />}
-                    text="https://solusioneselectricas.com"
-                  />
+                  <InfoLine icon={<Mail size={18} />} text="soldelnorte.ceo@gmail.com" />
+                  <InfoLine icon={<Globe size={18} />} text="https://solusioneselectricas.com" />
                 </div>
               </div>
             </div>
           </HeaderCard>
 
-          <HeaderCard title="CLIENTE">
+          <HeaderCard title={receptorTitle}>
             <div className="space-y-4">
-                <div>
-                  <div className="text-lg font-semibold text-slate-900">
-                    {cliente?.nombre || "Nombre del cliente"}
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    {cliente?.correo ? (
-                      <InfoLine icon={<Mail size={18} />} text={cliente.correo} />
-                    ) : null}
-                    {cliente?.numero ? (
-                      <InfoLine icon={<Phone size={18} />} text={cliente.numero} />
-                    ) : null}
-                  </div>
+              <div>
+                <div className="text-lg font-semibold text-slate-900">
+                  {receptorNombre}
                 </div>
+
+                <div className="mt-3 space-y-2">
+                  {receptor?.correo ? (
+                    <InfoLine icon={<Mail size={18} />} text={receptor.correo} />
+                  ) : null}
+
+                  {receptor?.numero ? (
+                    <InfoLine icon={<Phone size={18} />} text={receptor.numero} />
+                  ) : null}
+
+                  {receptor?.direccion ? (
+                    <InfoLine icon={<MapPin size={18} />} text={receptor.direccion} />
+                  ) : null}
+
+                  {receptor?.tipo === "empresa" && receptor?.asesorNombre ? (
+                    <InfoLine icon={<User size={18} />} text={`Asesor: ${receptor.asesorNombre}`} />
+                  ) : null}
+
+                  {receptor?.tipo === "empresa" && receptor?.asesorNumero ? (
+                    <InfoLine icon={<Phone size={18} />} text={receptor.asesorNumero} />
+                  ) : null}
+                </div>
+              </div>
             </div>
           </HeaderCard>
         </div>
@@ -151,11 +168,13 @@ export default function QuotePreview({
               </div>
             ) : (
               items.map((it, idx) => {
-                const lineTotal = it.precioUnitario * it.cantidad;
+                const precioUnitario = convert(it.precioUnitarioCRC);
+                const lineTotal = precioUnitario * it.cantidad;
                 const alt = idx % 2 === 1;
+
                 return (
                   <div
-                    key={it.id}
+                    key={it.id ?? `row-${idx}`}
                     className={[
                       "grid grid-cols-12 px-5 py-5",
                       alt ? "bg-slate-50" : "bg-white",
@@ -169,15 +188,11 @@ export default function QuotePreview({
                         <div className="mt-1 text-sm text-slate-500">
                           {it.detalle}
                         </div>
-                      ) : (
-                        <div className="mt-1 text-sm text-slate-500">
-                          {it.tipo}
-                        </div>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="col-span-2 text-right text-sm text-slate-700 md:text-base">
-                      {formatMoney(it.precioUnitario, moneda)}
+                      {formatMoney(precioUnitario, currencyToShow)}
                     </div>
 
                     <div className="col-span-2 text-center text-sm text-slate-700 md:text-base">
@@ -185,7 +200,7 @@ export default function QuotePreview({
                     </div>
 
                     <div className="col-span-2 text-right text-sm font-semibold text-slate-900 md:text-base">
-                      {formatMoney(lineTotal, moneda)}
+                      {formatMoney(lineTotal, currencyToShow)}
                     </div>
                   </div>
                 );
@@ -194,7 +209,7 @@ export default function QuotePreview({
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-12 ">
+        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-12">
           <div className="md:col-span-8">
             <div className="rounded-xl border border-slate-200 bg-white">
               <div className="p-5">
@@ -203,7 +218,7 @@ export default function QuotePreview({
                     SUBTOTAL:
                   </div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {formatMoney(subtotal, moneda)}
+                    {formatMoney(subtotal, currencyToShow)}
                   </div>
                 </div>
 
@@ -212,7 +227,7 @@ export default function QuotePreview({
                     IVA ({Math.round(ivaRate * 100)}%):
                   </div>
                   <div className="text-sm font-semibold text-slate-900">
-                    {formatMoney(iva, moneda)}
+                    {formatMoney(iva, currencyToShow)}
                   </div>
                 </div>
 
@@ -222,33 +237,25 @@ export default function QuotePreview({
                       TOTAL:
                     </div>
                     <div className="text-2xl font-semibold text-cyan-700">
-                      {formatMoney(total, moneda)}
+                      {formatMoney(total, currencyToShow)}
                     </div>
                   </div>
                 </div>
+
+
               </div>
             </div>
           </div>
         </div>
-         <div className="md:col-span-7 mt-6">
-            <div className="text-sm font-semibold tracking-wide text-cyan-700">
-              NOTAS
-            </div>
-            <div className=" text-sm leading-7 text-slate-600">
-              {nota}
-            </div>
 
-            {showTipoCambio ? (
-              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="text-sm font-semibold text-slate-800">
-                  Tipo de cambio
-                </div>
-                <div className="mt-1 text-sm text-slate-600">
-                  {formatMoney(tipoCambioNum, "CRC")} por 1 USD
-                </div>
-              </div>
-            ) : null}
+        <div className="md:col-span-7 mt-6">
+          <div className="text-sm font-semibold tracking-wide text-cyan-700">
+            NOTAS
           </div>
+          <div className="text-sm leading-7 text-slate-600">
+            {nota}
+          </div>
+        </div>
       </div>
     </div>
   );

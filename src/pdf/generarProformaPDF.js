@@ -6,16 +6,16 @@ function safe(v) {
 }
 
 function toNum(v) {
-  const n = Number(v);
+  const n = Number(String(v).replace(/,/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
 
-function fmtCRC(n) {
+function fmtMoney(n, currency) {
   const x = toNum(n);
   const fixed = x.toFixed(2);
   const parts = fixed.split(".");
   const int = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  const prefix = "¢";
+  const prefix = currency === "USD" ? "$" : "¢";
   if (parts[1] === "00") return `${prefix}${int}`;
   return `${prefix}${int}.${parts[1]}`;
 }
@@ -83,9 +83,11 @@ export async function generarProformaPDF({
   fechaTexto,
   horaTexto,
   numeroProforma,
-  cliente,
+  receptor,
   productos,
   servicios,
+  moneda = "CRC",
+  tipoCambio,
   aplicarIVA,
   nota,
   nombreArchivo,
@@ -94,7 +96,6 @@ export async function generarProformaPDF({
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
-  const azulPrimario = [79, 179, 217];
   const azulOscuro = [44, 95, 122];
   const azulClaro = [227, 244, 251];
   const texto = [26, 95, 122];
@@ -133,57 +134,32 @@ export async function generarProformaPDF({
 
   const empresa = {
     nombre: "Soluciones Eléctricas del Norte",
-    numero: "89893335",
-    correo: "solusionesElectricas@gmail.com",
+    numero: "6135-0349",
+    correo: "soldelnorte.ceo@gmail.com",
     web: "solusioneselectricas.com",
     direccion: "",
   };
 
-  const clienteFinal =
-    cliente &&
-    (cliente.nombre || cliente.correo || cliente.numero || cliente.direccion)
-      ? cliente
+  const receptorFinal =
+    receptor &&
+    (safe(receptor.nombre).trim() ||
+      safe(receptor.correo).trim() ||
+      safe(receptor.numero).trim() ||
+      safe(receptor.direccion).trim())
+      ? receptor
       : {
+          tipo: "cliente",
           nombre: "Cliente de Prueba",
           correo: "cliente.prueba@gmail.com",
           numero: "8888-8888",
           direccion: "San Jose, Costa Rica",
         };
 
-  const productosFinal =
-    Array.isArray(productos) && productos.length
-      ? productos
-      : [
-          {
-            nombre: "Interruptor termomagnetico 20A",
-            cantidad: 2,
-            precioUnitario: 3500,
-          },
-          {
-            nombre: "Cable THHN #12 (metro)",
-            cantidad: 35,
-            precioUnitario: 650,
-          },
-          {
-            nombre: "Toma doble polarizado",
-            cantidad: 6,
-            precioUnitario: 1200,
-          },
-        ];
-
-  const serviciosFinal =
-    Array.isArray(servicios) && servicios.length
-      ? servicios
-      : [
-          {
-            nombre: "Instalacion de tomas y cableado",
-            cantidad: 1,
-            precioUnitario: 25000,
-          },
-        ];
+  const productosFinal = Array.isArray(productos) ? productos : [];
+  const serviciosFinal = Array.isArray(servicios) ? servicios : [];
 
   const items = [...productosFinal, ...serviciosFinal]
-    .filter((i) => i && (i.nombre || i.precioUnitario || i.cantidad))
+    .filter((i) => i && (safe(i.nombre).trim() || toNum(i.precioUnitario) || toNum(i.cantidad)))
     .map((i) => {
       const cantidad = toNum(i.cantidad || 0);
       const precio = toNum(i.precioUnitario || 0);
@@ -215,8 +191,6 @@ export async function generarProformaPDF({
 
     const label = "Fecha:";
 
-
-
     doc.setFont("helvetica", "normal");
     doc.setFontSize(12.5);
 
@@ -234,11 +208,10 @@ export async function generarProformaPDF({
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...azulOscuroProforma);
 
-    const proformaText = `${proforma}`;
     const maxProformaW = xRight - xLeft - doc.getTextWidth(leftBlock);
-    const proformaFit = fitText(doc, proformaText, Math.max(120, maxProformaW));
+    const proformaFit = fitText(doc, proforma, Math.max(120, maxProformaW));
 
-    doc.text(`${proformaFit}`, xRight, y, { align: "right" });
+    doc.text(proformaFit, xRight, y, { align: "right" });
   };
 
   const drawFooter = (pageNum, pageCount) => {
@@ -298,32 +271,29 @@ export async function generarProformaPDF({
       empresa.web ? { icon: icons.web, text: safe(empresa.web) } : null,
     ].filter(Boolean);
 
-    const clienteLines = [
-      clienteFinal?.correo
-        ? { icon: icons.mail, text: safe(clienteFinal.correo) }
-        : null,
-      clienteFinal?.numero
-        ? { icon: icons.phone, text: safe(clienteFinal.numero) }
-        : null,
-      clienteFinal?.direccion
-        ? { icon: icons.location, text: safe(clienteFinal.direccion) }
-        : null,
+    const receptorLines = [
+      receptorFinal?.correo ? { icon: icons.mail, text: safe(receptorFinal.correo) } : null,
+      receptorFinal?.numero ? { icon: icons.phone, text: safe(receptorFinal.numero) } : null,
+      receptorFinal?.direccion ? { icon: icons.location, text: safe(receptorFinal.direccion) } : null,
     ].filter(Boolean);
 
+    if (receptorFinal?.tipo === "empresa") {
+      const asesorNombre = safe(receptorFinal.asesorNombre).trim();
+      const asesorNumero = safe(receptorFinal.asesorNumero).trim();
+
+      if (asesorNombre) receptorLines.push({ text: `Asesor: ${asesorNombre}` });
+      if (asesorNumero) receptorLines.push({ icon: icons.phone, text: asesorNumero });
+    }
+
     drawCompactCard(marginX, yCards, empresa.nombre, empresaLines);
-    drawCompactCard(
-      marginX + cardW + gap,
-      yCards,
-      safe(clienteFinal?.nombre),
-      clienteLines,
-    );
+    drawCompactCard(marginX + cardW + gap, yCards, safe(receptorFinal?.nombre), receptorLines);
   };
 
   const rows = items.map((it) => [
     it.nombre,
-    fmtCRC(it.precio),
+    fmtMoney(it.precio, moneda),
     String(it.cantidad),
-    fmtCRC(it.total),
+    fmtMoney(it.total, moneda),
   ]);
 
   const drawNotesTotals = (startY) => {
@@ -405,9 +375,9 @@ export async function generarProformaPDF({
       drawRightFitted(value, xVal, y + 24, maxWVal, 12.5, 9);
     };
 
-    drawTotalRow(startY + 6, "SUBTOTAL:", fmtCRC(subtotal), false);
-    drawTotalRow(startY + 42, "IVA (13%):", fmtCRC(iva), false);
-    drawTotalRow(startY + 78, "TOTAL:", fmtCRC(total), true);
+    drawTotalRow(startY + 6, "SUBTOTAL:", fmtMoney(subtotal, moneda), false);
+    drawTotalRow(startY + 42, "IVA (13%):", fmtMoney(iva, moneda), false);
+    drawTotalRow(startY + 78, "TOTAL:", fmtMoney(total, moneda), true);
   };
 
   drawHeader();
@@ -485,8 +455,6 @@ export async function generarProformaPDF({
     drawFooter(i, totalPages);
   }
 
-  const name =
-    safe(nombreArchivo).trim() ||
-    `Proforma_${safe(numeroProforma).replace("#", "")}.pdf`;
+  const name = safe(nombreArchivo).trim() || `Proforma_${safe(numeroProforma).replace("#", "")}.pdf`;
   doc.save(name);
 }

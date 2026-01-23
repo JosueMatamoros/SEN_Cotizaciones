@@ -23,6 +23,25 @@ export default function App() {
     asesorNumero: "",
   });
 
+  const receptor =
+    tab === "cliente"
+      ? {
+          tipo: "cliente",
+          nombre: cliente.nombre,
+          numero: cliente.numero,
+          correo: cliente.correo,
+          direccion: cliente.direccion,
+        }
+      : {
+          tipo: "empresa",
+          nombre: empresa.nombreEmpresa,
+          numero: empresa.numeroEmpresa,
+          correo: empresa.correo,
+          direccion: empresa.direccion,
+          asesorNombre: empresa.asesorNombre,
+          asesorNumero: empresa.asesorNumero,
+        };
+
   const [productos, setProductos] = useState([
     { id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" },
   ]);
@@ -47,8 +66,7 @@ export default function App() {
               year: "numeric",
             }),
             numeroProforma: "#SEN-00001",
-            cliente,
-            empresa,
+            receptor,
             productos,
             servicios,
             moneda,
@@ -66,8 +84,7 @@ export default function App() {
       <div className="w-full flex flex-col-reverse lg:flex-row">
         <PreviewSection
           tab={tab}
-          cliente={cliente}
-          empresa={empresa}
+          receptor={receptor}
           productos={productos}
           servicios={servicios}
           moneda={moneda}
