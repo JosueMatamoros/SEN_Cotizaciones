@@ -30,6 +30,32 @@ async function toDataUrl(url) {
   });
 }
 
+async function svgToPngDataUrl(url, size) {
+  const r = await fetch(url);
+  const svgText = await r.text();
+  const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  return await new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(svgUrl);
+      res(canvas.toDataURL("image/png"));
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(svgUrl);
+      rej(e);
+    };
+    img.src = svgUrl;
+  });
+}
+
 function fitText(doc, text, maxW) {
   const t = safe(text);
   if (!t) return "";
@@ -39,6 +65,17 @@ function fitText(doc, text, maxW) {
     s = s.slice(0, -1);
   }
   return s.length ? `${s}...` : "";
+}
+
+function wrapTitleTwoLines(doc, text, maxW) {
+  const t = safe(text).trim();
+  if (!t) return [""];
+  const lines = doc.splitTextToSize(t, maxW);
+  if (lines.length <= 2) return lines;
+  const first = safe(lines[0]);
+  const rest = safe(lines.slice(1).join(" "));
+  const second = fitText(doc, rest, maxW);
+  return [first, second];
 }
 
 export async function generarProformaPDF({
@@ -59,7 +96,6 @@ export async function generarProformaPDF({
   const azulPrimario = [79, 179, 217];
   const azulOscuro = [44, 95, 122];
   const azulClaro = [227, 244, 251];
-  const azulSuave = [184, 230, 245];
   const texto = [26, 95, 122];
   const textoOscuro = [15, 50, 70];
   const blanco = [255, 255, 255];
@@ -67,32 +103,88 @@ export async function generarProformaPDF({
   const headerImg = await toDataUrl("/assets/header-sen.png");
   const footerImg = await toDataUrl("/assets/footer-sen.png");
 
+  const iconRaster = 96;
+  const iconDraw = 12;
+
+  const icons = {
+    phone: await svgToPngDataUrl("/assets/icons/phone.svg", iconRaster),
+    mail: await svgToPngDataUrl("/assets/icons/mail.svg", iconRaster),
+    location: await svgToPngDataUrl("/assets/icons/location.svg", iconRaster),
+    web: await svgToPngDataUrl("/assets/icons/web.svg", iconRaster),
+  };
+
+
   const headerH = 175;
   const footerH = 90;
 
   const marginX = 40;
-  const gap = 20;
+  const gap = 22;
 
   const yCards = headerH + 18;
-  const cardW = (pageW - marginX * 2 - gap) / 2;
-  const cardH = 180;
 
-  const yTable = yCards + cardH + 28;
+  const cardW = (pageW - marginX * 2 - gap) / 2;
+  const cardH = 120;
+
+  const yTable = yCards + cardH + 18;
 
   const empresa = {
     nombre: "Soluciones Eléctricas del Norte",
     numero: "89893335",
     correo: "solusionesElectricas@gmail.com",
     web: "solusioneselectricas.com",
+    direccion: "",
   };
 
-  const items = [...(productos || []), ...(servicios || [])]
+  const clienteFinal =
+    cliente &&
+    (cliente.nombre || cliente.correo || cliente.numero || cliente.direccion)
+      ? cliente
+      : {
+          nombre: "Cliente de Prueba",
+          correo: "cliente.prueba@gmail.com",
+          numero: "8888-8888",
+          direccion: "San Jose, Costa Rica",
+        };
+
+  const productosFinal =
+    Array.isArray(productos) && productos.length
+      ? productos
+      : [
+          {
+            nombre: "Interruptor termomagnetico 20A",
+            cantidad: 2,
+            precioUnitario: 3500,
+          },
+          {
+            nombre: "Cable THHN #12 (metro)",
+            cantidad: 35,
+            precioUnitario: 650,
+          },
+          {
+            nombre: "Toma doble polarizado",
+            cantidad: 6,
+            precioUnitario: 1200,
+          },
+        ];
+
+  const serviciosFinal =
+    Array.isArray(servicios) && servicios.length
+      ? servicios
+      : [
+          {
+            nombre: "Instalacion de tomas y cableado",
+            cantidad: 1,
+            precioUnitario: 25000,
+          },
+        ];
+
+  const items = [...productosFinal, ...serviciosFinal]
     .filter((i) => i && (i.nombre || i.precioUnitario || i.cantidad))
     .map((i) => {
       const cantidad = toNum(i.cantidad || 0);
       const precio = toNum(i.precioUnitario || 0);
-      const total = cantidad * precio;
-      return { nombre: safe(i.nombre), cantidad, precio, total };
+      const totalIt = cantidad * precio;
+      return { nombre: safe(i.nombre), cantidad, precio, total: totalIt };
     });
 
   let subtotal = 0;
@@ -110,17 +202,17 @@ export async function generarProformaPDF({
     const p = safe(numeroProforma).trim();
 
     const y = 140;
-    const gap = 178;
+    const gapHeader = 178;
 
     const xRight = pageW - 40;
-    const xLeft = xRight - gap;
+    const xLeft = xRight - gapHeader;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(...textoOscuro);
 
-    doc.text(fitText(doc, f, 160), xLeft, y, { align: "right" });
-    doc.text(fitText(doc, p, 140), xRight, y, { align: "right" });
+    doc.text(fitText(doc, f, 180), xLeft, y, { align: "right" });
+    doc.text(fitText(doc, p, 160), xRight, y, { align: "right" });
   };
 
   const drawFooter = (pageNum, pageCount) => {
@@ -134,92 +226,70 @@ export async function generarProformaPDF({
     });
   };
 
-  const drawCard = (x, y, title, main, lines, iconPath) => {
-    doc.setFillColor(230, 230, 230);
-    doc.roundedRect(x + 4, y + 4, cardW, cardH, 12, 12, "F");
+  const drawCompactCard = (x, y, title, lines) => {
+    doc.setFillColor(230, 238, 245);
+    doc.roundedRect(x + 3, y + 4, cardW, cardH, 14, 14, "F");
 
     doc.setFillColor(...blanco);
-    doc.roundedRect(x, y, cardW, cardH, 12, 12, "F");
+    doc.setDrawColor(220, 230, 240);
+    doc.setLineWidth(1.2);
+    doc.roundedRect(x, y, cardW, cardH, 14, 14, "FD");
 
-    doc.setDrawColor(...azulPrimario);
-    doc.setLineWidth(2.5);
-    doc.roundedRect(x, y, cardW, cardH, 12, 12, "S");
-
-    doc.setFillColor(...azulOscuro);
-    doc.roundedRect(x, y, cardW, 52, 12, 12, "F");
-    doc.setFillColor(...azulPrimario);
-    doc.rect(x, y + 40, cardW, 12, "F");
-
-    doc.setFillColor(...azulSuave);
-    doc.rect(x, y + 52, cardW, 4, "F");
-
-    let titleX = x + 20;
-    if (iconPath) {
-      try {
-        doc.addImage(iconPath, "PNG", x + 18, y + 18, 24, 24);
-        titleX = x + 50;
-      } catch (e) {}
-    }
-
-    doc.setTextColor(...blanco);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text(title, titleX, y + 34);
+    const textX = x + 18;
+    const maxTextW = cardW - (textX - x) - 18;
 
     doc.setTextColor(...textoOscuro);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text(fitText(doc, main, cardW - 40), x + 20, y + 88);
+    doc.setFontSize(12);
+
+    const titleLines = wrapTitleTwoLines(doc, title, maxTextW);
+    const titleY = y + 26;
+    const lineGap = 14;
+
+    doc.text(titleLines[0] || "", textX, titleY);
+    if (titleLines[1]) doc.text(titleLines[1], textX, titleY + lineGap);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
+    doc.setFontSize(11.2);
     doc.setTextColor(...texto);
 
-    let yy = y + 112;
-    for (const l of lines.filter(Boolean)) {
-      doc.setFillColor(...azulPrimario);
-      doc.circle(x + 20, yy - 4, 2, "F");
-      doc.text(fitText(doc, l, cardW - 50), x + 30, yy);
-      yy += 20;
+    const linesStartY = titleLines[1] ? y + 60 : y + 52;
+
+    let yy = linesStartY;
+    for (const row of lines.filter(Boolean)) {
+      if (row.icon) {
+        doc.addImage(row.icon, "PNG", textX, yy - 10, iconDraw, iconDraw);
+      }
+      doc.text(fitText(doc, row.text, maxTextW - 18), textX + 22, yy);
+      yy += 19;
     }
   };
 
-  const drawCards = async () => {
-    let empresaIcon = null;
-    let clienteIcon = null;
+  const drawCards = () => {
+    const empresaLines = [
+      empresa.numero ? { icon: icons.phone, text: safe(empresa.numero) } : null,
+      empresa.correo ? { icon: icons.mail, text: safe(empresa.correo) } : null,
+      empresa.web ? { icon: icons.web, text: safe(empresa.web) } : null,
+    ].filter(Boolean);
 
-    try {
-      empresaIcon = await toDataUrl("/assets/icon-empresa.png");
-    } catch (e) {}
+    const clienteLines = [
+      clienteFinal?.correo
+        ? { icon: icons.mail, text: safe(clienteFinal.correo) }
+        : null,
+      clienteFinal?.numero
+        ? { icon: icons.phone, text: safe(clienteFinal.numero) }
+        : null,
+      clienteFinal?.direccion
+        ? { icon: icons.location, text: safe(clienteFinal.direccion) }
+        : null,
+    ].filter(Boolean);
 
-    try {
-      clienteIcon = await toDataUrl("/assets/icon-cliente.png");
-    } catch (e) {}
-
-    drawCard(
-      marginX,
-      yCards,
-      "EMPRESA",
-      empresa.nombre,
-      [
-        `Telefono: ${empresa.numero}`,
-        `Correo: ${empresa.correo}`,
-        `Web: ${empresa.web}`,
-      ],
-      empresaIcon,
-    );
-
-    drawCard(
+    drawCompactCard(marginX, yCards, empresa.nombre, empresaLines);
+    drawCompactCard(
       marginX + cardW + gap,
       yCards,
-      "CLIENTE",
-      safe(cliente?.nombre),
-      [
-        safe(cliente?.correo) ? `Correo: ${safe(cliente.correo)}` : "",
-        safe(cliente?.numero) ? `Telefono: ${safe(cliente.numero)}` : "",
-        safe(cliente?.direccion) ? `Direccion: ${safe(cliente.direccion)}` : "",
-      ],
-      clienteIcon,
+      safe(clienteFinal?.nombre),
+      clienteLines,
     );
   };
 
@@ -235,80 +305,65 @@ export async function generarProformaPDF({
     const rightX = marginX + leftW + gap;
     const rowW = pageW - rightX - marginX;
 
-    doc.setFillColor(235, 235, 235);
-    doc.roundedRect(marginX + 3, startY + 3, leftW, 168, 12, 12, "F");
-
     doc.setFillColor(...blanco);
-    doc.roundedRect(marginX, startY, leftW, 168, 12, 12, "F");
+    doc.setDrawColor(220, 230, 240);
+    doc.setLineWidth(1.2);
+    doc.roundedRect(marginX, startY, leftW, 148, 12, 12, "FD");
 
-    doc.setDrawColor(...azulPrimario);
-    doc.setLineWidth(2.5);
-    doc.roundedRect(marginX, startY, leftW, 168, 12, 12, "S");
-
-    doc.setFillColor(...azulSuave);
-    doc.roundedRect(marginX, startY, leftW, 44, 12, 12, "F");
-    doc.rect(marginX, startY + 32, leftW, 12, "F");
+    doc.setFillColor(...azulClaro);
+    doc.roundedRect(marginX, startY, leftW, 34, 12, 12, "F");
 
     doc.setTextColor(...azulOscuro);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(15);
-    doc.text("NOTAS", marginX + 20, startY + 30);
+    doc.setFontSize(14);
+    doc.text("NOTAS", marginX + 16, startY + 24);
 
-    doc.setTextColor(...texto);
+    doc.setTextColor(...textoOscuro);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
+
     const nt =
       safe(nota).trim() ||
       "El pago vence al recibir esta proforma. Por favor realice el pago a los datos bancarios proporcionados o contáctenos si tiene alguna pregunta o necesita más información.";
-    doc.text(doc.splitTextToSize(nt, leftW - 40), marginX + 20, startY + 64);
+
+    doc.text(doc.splitTextToSize(nt, leftW - 32), marginX + 16, startY + 52);
 
     const drawTotalRow = (y, label, value, isFinal) => {
       if (isFinal) {
-        doc.setFillColor(220, 220, 220);
-        doc.roundedRect(rightX + 3, y + 3, rowW, 52, 10, 10, "F");
-
         doc.setFillColor(...azulOscuro);
-        doc.roundedRect(rightX, y, rowW, 52, 10, 10, "F");
-
-        doc.setFillColor(...azulPrimario);
-        doc.roundedRect(rightX, y, rowW, 8, 10, 10, "F");
+        doc.roundedRect(rightX, y, rowW, 46, 12, 12, "F");
 
         doc.setTextColor(...blanco);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.text(label, rightX + 20, y + 34);
-        doc.text(value, rightX + rowW - 20, y + 34, { align: "right" });
+        doc.setFontSize(14);
+        doc.text(label, rightX + 16, y + 30);
+        doc.text(value, rightX + rowW - 16, y + 30, { align: "right" });
         return;
       }
 
-      doc.setFillColor(240, 240, 240);
-      doc.roundedRect(rightX + 2, y + 2, rowW, 50, 10, 10, "F");
-
       doc.setFillColor(...blanco);
-      doc.roundedRect(rightX, y, rowW, 50, 10, 10, "F");
-
-      doc.setDrawColor(...azulSuave);
-      doc.setLineWidth(2);
-      doc.roundedRect(rightX, y, rowW, 50, 10, 10, "S");
+      doc.setDrawColor(220, 230, 240);
+      doc.setLineWidth(1.2);
+      doc.roundedRect(rightX, y, rowW, 42, 12, 12, "FD");
 
       doc.setFillColor(...azulPrimario);
-      doc.rect(rightX, y + 12, 5, 26, "F");
+      doc.rect(rightX, y + 10, 4, 22, "F");
 
       doc.setTextColor(...textoOscuro);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.text(label, rightX + 20, y + 32);
-      doc.text(value, rightX + rowW - 20, y + 32, { align: "right" });
+      doc.setFontSize(12.5);
+      doc.text(label, rightX + 14, y + 27);
+      doc.text(value, rightX + rowW - 14, y + 27, { align: "right" });
     };
 
-    drawTotalRow(startY + 6, "SUBTOTAL:", fmtCRC(subtotal), false);
-    drawTotalRow(startY + 62, "IVA (13%):", fmtCRC(iva), false);
-    drawTotalRow(startY + 118, "TOTAL:", fmtCRC(total), true);
+    drawTotalRow(startY + 2, "SUBTOTAL:", fmtCRC(subtotal), false);
+    drawTotalRow(startY + 50, "IVA (13%):", fmtCRC(iva), false);
+    drawTotalRow(startY + 98, "TOTAL:", fmtCRC(total), true);
   };
 
   drawHeader();
   drawHeaderFechaHora();
-  await drawCards();
+  drawCards();
 
   autoTable(doc, {
     startY: yTable,
@@ -318,10 +373,11 @@ export async function generarProformaPDF({
     styles: {
       font: "helvetica",
       fontSize: 10.5,
-      cellPadding: 12,
+      cellPadding: 10,
       lineColor: [208, 232, 242],
       lineWidth: 1,
       overflow: "hidden",
+      textColor: texto,
     },
     headStyles: {
       fillColor: azulOscuro,
@@ -331,20 +387,19 @@ export async function generarProformaPDF({
       halign: "left",
     },
     alternateRowStyles: { fillColor: azulClaro },
-    bodyStyles: { textColor: texto },
     columnStyles: {
       0: {
-        cellWidth: 240,
+        cellWidth: 260,
         fontStyle: "bold",
         textColor: textoOscuro,
         overflow: "linebreak",
         fontSize: 11,
       },
-      1: { halign: "right", cellWidth: 110, overflow: "ellipsize" },
-      2: { halign: "center", cellWidth: 60, overflow: "hidden" },
+      1: { halign: "right", cellWidth: 100, overflow: "ellipsize" },
+      2: { halign: "center", cellWidth: 70, overflow: "hidden" },
       3: {
         halign: "right",
-        cellWidth: 115,
+        cellWidth: 105,
         overflow: "ellipsize",
         fontStyle: "bold",
         textColor: textoOscuro,
@@ -357,11 +412,9 @@ export async function generarProformaPDF({
   });
 
   const tableEndY = doc.lastAutoTable ? doc.lastAutoTable.finalY : yTable;
-  const paddingAfterTable = 100;
+  const paddingAfterTable = 18;
 
-  const notesH = 168;
-  const totalsH = 170;
-  const blockH = Math.max(notesH, totalsH);
+  const blockH = 148;
   const bottomLimit = pageH - footerH - 30;
 
   let yNotesTotals = tableEndY + paddingAfterTable;
@@ -370,7 +423,7 @@ export async function generarProformaPDF({
     doc.addPage();
     drawHeader();
     drawHeaderFechaHora();
-    yNotesTotals = headerH + 40;
+    yNotesTotals = headerH + 24;
   }
 
   drawNotesTotals(yNotesTotals);
