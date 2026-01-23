@@ -6,6 +6,8 @@ import Tabs from "../components/form/Tabs";
 import Accordion from "../components/form/Accordion";
 import Card from "../components/form/Card";
 import ItemsSection from "../components/form/ItemsSection";
+import CustomSelect from "../components/form/CustomSelect";
+import Toggle from "../components/form/Toggle";
 
 export default function FormSection() {
   const [tab, setTab] = useState("cliente");
@@ -35,9 +37,15 @@ export default function FormSection() {
     { id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" },
   ]);
 
+  // Detalles de cotización
+  const [moneda, setMoneda] = useState("CRC");
+  const [tipoCambio, setTipoCambio] = useState("");
+  const [aplicarIVA, setAplicarIVA] = useState(false);
+
   return (
-    <section className="w-full  p-6">
+    <section className="w-full p-6">
       <div className="mx-auto w-full max-w-5xl space-y-8">
+        {/* ...existing code... */}
         <Card title="Datos">
           <Tabs value={tab} onChange={setTab} />
 
@@ -76,8 +84,8 @@ export default function FormSection() {
                 <Field
                   label="Dirección exacta"
                   placeholder="Provincia, cantón, distrito, señas exactas"
-                  value={cliente.direccion}
-                  onChange={(v) => setCliente((s) => ({ ...s, direccion: v }))}
+                  value={empresa.direccion}
+                  onChange={(v) => setEmpresa((s) => ({ ...s, direccion: v }))}
                 />
               </motion.div>
             ) : (
@@ -98,6 +106,17 @@ export default function FormSection() {
                   }
                 />
                 <Field
+                  label="Número empresa"
+                  placeholder="+506 8888-8888"
+                  value={empresa.numeroEmpresa}
+                  onChange={(v) =>
+                    setEmpresa((s) => ({ ...s, numeroEmpresa: v }))
+                  }
+                  type="tel"
+                  pattern="^\+506\s\d{4}-\d{4}$"
+                  title="Formato: +506 8888-8888"
+                />
+                <Field
                   label="Correo"
                   placeholder="empresa@ejemplo.com"
                   value={empresa.correo}
@@ -109,17 +128,6 @@ export default function FormSection() {
                   placeholder="Provincia, cantón, distrito, señas exactas"
                   value={empresa.direccion}
                   onChange={(v) => setEmpresa((s) => ({ ...s, direccion: v }))}
-                />
-                <Field
-                  label="Número empresa"
-                  placeholder="+506 8888-8888"
-                  value={empresa.numeroEmpresa}
-                  onChange={(v) =>
-                    setEmpresa((s) => ({ ...s, numeroEmpresa: v }))
-                  }
-                  type="tel"
-                  pattern="^\+506\s\d{4}-\d{4}$"
-                  title="Formato: +506 8888-8888"
                 />
 
                 <div className="md:col-span-2">
@@ -173,6 +181,39 @@ export default function FormSection() {
           namePlaceholder="Nombre del servicio"
           currency="CRC"
         />
+
+        <Card title="Detalles de cotización" className="mt-8">
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-around">
+            <div className="w-full md:w-1/3">
+              <label className="block mb-2 text-sm font-medium text-slate-700">Moneda</label>
+              <CustomSelect value={moneda} onChange={setMoneda} />
+            </div>
+            <div className="w-full md:w-1/3">
+              <label className="block mb-2 text-sm font-medium text-slate-700">Tipo de cambio</label>
+              <div className="relative w-full">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">₡</span>
+                <input
+                  type="text"
+                  value={tipoCambio}
+                  onChange={(e) => setTipoCambio(e.target.value.replace(/[^\d.]/g, ""))}
+                  disabled={moneda !== "USD"}
+                  placeholder="520"
+                  className="w-full rounded-md border border-slate-200 bg-white pl-8 pr-4 py-2 text-sm text-slate-700 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100"
+                />
+              </div>
+            </div>
+            <div className="w-full md:w-1/3 flex flex-col items-center md:items-start">
+              <label className="block mb-2 text-sm font-medium text-slate-700">Aplicar IVA</label>
+              <Toggle checked={aplicarIVA} onChange={setAplicarIVA} />
+            </div>
+          </div>
+        </Card>
+        <Card title="Notas" className="mt-8">
+          <textarea
+            className="w-full min-h-30 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700  focus:ring-4 focus:ring-cyan-100"
+            placeholder="Escribe aquí tus notas..."
+          />
+        </Card>
       </div>
     </section>
   );

@@ -37,6 +37,7 @@ export function parseCurrencyToNumber(value) {
 
 export default function CurrencyInput({
   label,
+  labelAlt,
   placeholder,
   value,
   onChange,
@@ -50,6 +51,7 @@ export default function CurrencyInput({
     <div>
       <label className="mb-2 block text-sm font-medium text-slate-700">
         {label}
+        {labelAlt}
       </label>
 
       <div className="relative">

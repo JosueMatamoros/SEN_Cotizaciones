@@ -1,5 +1,4 @@
-import { Trash2 } from "lucide-react";
-import { Plus } from "../../utils/icons";
+import { Plus, Trash2 } from "../../utils/icons";
 import Field from "./Field";
 import Card from "./Card";
 import CurrencyInput, { parseCurrencyToNumber } from "./CurrencyInput";
@@ -57,10 +56,10 @@ export default function ItemsSection({
         <button
           type="button"
           onClick={addItem}
-          className="inline-flex h-11 items-center rounded-lg bg-cyan-400 px-5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-cyan-300 gap-2"
+          className="inline-flex h-10 items-center rounded-lg bg-cyan-400 px-3 lg:px-5 text-sm font-semibold text-slate-900 shadow-sm transition-colors hover:bg-cyan-300 gap-2 "
         >
           <Plus size={20} className="shrink-0" />
-          {addLabel}
+          <span className="hidden lg:inline ">{addLabel}</span>
         </button>
       }
     >
@@ -98,19 +97,20 @@ export default function ItemsSection({
                 <div className="flex items-end gap-3">
                   <div className="flex-1">
                     <CurrencyInput
-                      label="Precio unitario"
+                      label={<span className="xl:inline hidden">Precio unitario</span>}
                       placeholder="0"
                       value={it.precioUnitario}
                       onChange={(v) => updateItem(it.id, { precioUnitario: v })}
                       currency={currency}
                       currencySymbol={currencySymbol}
+                      labelAlt={<span className="xl:hidden inline">Precio</span>}
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => removeItem(it.id)}
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50"
                     aria-label="Eliminar"
                   >
                     <Trash2 size={18} />

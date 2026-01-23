@@ -11,7 +11,7 @@ export default function Tabs({ value, onChange }) {
   );
 
   return (
-    <div className="mb-10 flex w-full flex-col gap-4 sm:flex-row sm:gap-6">
+    <div className="mb-4 flex w-full flex-col gap-4 sm:flex-row sm:gap-6 ">
       {items.map((it) => {
         const active = it.key === value;
         const Icon = it.icon;
@@ -21,7 +21,7 @@ export default function Tabs({ value, onChange }) {
             type="button"
             onClick={() => onChange(it.key)}
             className={[
-              "h-12 w-full rounded-lg text-sm font-semibold transition-colors sm:h-14 flex items-center justify-center gap-2",
+              "h-12 w-full rounded-lg text-sm font-semibold transition-all  flex items-center justify-center gap-2 hover:scale-105  duration-300",
               active
                 ? "bg-cyan-400 text-slate-900 shadow-sm"
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200",
