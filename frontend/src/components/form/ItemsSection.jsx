@@ -35,6 +35,7 @@ export default function ItemsSection({
   namePlaceholder,
   currency = "CRC",
   currencySymbol,
+  error,
 }) {
   const addItem = () => {
     setItems((prev) => [createItem(), ...prev]);
@@ -70,6 +71,7 @@ export default function ItemsSection({
           const cantidad = parseIntSafe(it.cantidad, 1);
           const precioUnitario = parseCurrencyToNumber(it.precioUnitario);
           const totalLinea = precioUnitario * cantidad;
+          const hasError = error && !it.nombre.trim();
 
           return (
             <div
@@ -82,6 +84,7 @@ export default function ItemsSection({
                   placeholder={namePlaceholder}
                   value={it.nombre}
                   onChange={(v) => updateItem(it.id, { nombre: v })}
+                  error={hasError ? "El nombre es obligatorio" : undefined}
                 />
               </div>
 

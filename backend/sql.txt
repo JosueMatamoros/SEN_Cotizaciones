@@ -18,7 +18,6 @@ create table proforma (
   items jsonb not null
 );
 
-
 alter table proforma
 add constraint proforma_items_is_array_check
 check (jsonb_typeof(items) = 'array');

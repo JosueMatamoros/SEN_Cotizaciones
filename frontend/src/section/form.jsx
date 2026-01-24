@@ -32,6 +32,7 @@ export default function FormSection({
   setNota,
   anexos,
   setAnexos,
+  errores = {},
 }) {
   return (
     <section className="w-full p-6">
@@ -54,6 +55,7 @@ export default function FormSection({
                   placeholder="Nombre del cliente"
                   value={cliente.nombre}
                   onChange={(v) => setCliente((s) => ({ ...s, nombre: v }))}
+                  error={errores.nombreReceptor}
                 />
                 <Field
                   label="Número"
@@ -90,6 +92,7 @@ export default function FormSection({
                   placeholder="Razón social"
                   value={empresa.nombreEmpresa}
                   onChange={(v) => setEmpresa((s) => ({ ...s, nombreEmpresa: v }))}
+                  error={errores.nombreReceptor}
                 />
                 <Field
                   label="Número empresa"
@@ -148,6 +151,7 @@ export default function FormSection({
           setItems={setProductos}
           namePlaceholder="Nombre del producto"
           currency="CRC"
+          error={errores.items}
         />
 
         <ItemsSection
@@ -158,6 +162,7 @@ export default function FormSection({
           setItems={setServicios}
           namePlaceholder="Nombre del servicio"
           currency="CRC"
+          error={errores.items}
         />
 
         <Card title="Detalles de cotización" className="mt-8" icon={<FileText size={20} />}>
@@ -191,7 +196,7 @@ export default function FormSection({
 
         <Card title="Notas" className="mt-8" icon={<PencilLine size={20} />}>
           <textarea
-            className="w-full min-h-30 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700  focus:ring-4 focus:ring-cyan-100"
+            className="w-full min-h-30 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:ring-4 focus:ring-cyan-100"
             placeholder="Escribe aquí tus notas..."
             value={nota}
             onChange={e => setNota(e.target.value)}

@@ -1,19 +1,34 @@
-const baseInput =
-  "w-full rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100";
-
-const baseLabel = "mb-2 block text-sm font-medium text-slate-700";
-
-export default function Field({ label, placeholder, value, onChange, type = "text" }) {
+export default function Field({
+  label,
+  placeholder,
+  value,
+  onChange,
+  type = "text",
+  error
+}) {
   return (
-    <div>
-      <label className={baseLabel}>{label}</label>
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-slate-700">
+        {label}
+      </label>
       <input
         type={type}
-        className={baseInput}
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        className={[
+          "w-full rounded-md border px-4 py-2 text-sm text-slate-700",
+          "focus:ring-4 transition-colors",
+          error
+            ? "border-red-500 focus:border-red-500 focus:ring-red-100"
+            : "border-slate-200 bg-white focus:border-cyan-400 focus:ring-cyan-100"
+        ].join(" ")}
       />
+      {error && (
+        <p className="text-xs text-red-600 font-medium mt-1">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

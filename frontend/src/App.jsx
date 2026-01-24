@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useReceptor, useItems } from "./hooks/useFormLogic";
 import FormSection from "./section/form";
 import PreviewSection from "./section/preview";
 import { generarProformaPDF } from "./pdf/generarProformaPDF";
@@ -25,32 +26,17 @@ export default function App() {
     asesorNumero: "",
   });
 
-  const receptor =
-    tab === "cliente"
-      ? {
-          tipo: "cliente",
-          nombre: cliente.nombre,
-          numero: cliente.numero,
-          correo: cliente.correo,
-          direccion: cliente.direccion,
-        }
-      : {
-          tipo: "empresa",
-          nombre: empresa.nombreEmpresa,
-          numero: empresa.numeroEmpresa,
-          correo: empresa.correo,
-          direccion: empresa.direccion,
-          asesorNombre: empresa.asesorNombre,
-          asesorNumero: empresa.asesorNumero,
-        };
+  const receptor = useReceptor(tab, cliente, empresa);
 
-  const [productos, setProductos] = useState([
-    { id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" },
-  ]);
-
-  const [servicios, setServicios] = useState([
-    { id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" },
-  ]);
+  const {
+    productos,
+    setProductos,
+    servicios,
+    setServicios,
+  } = useItems(
+    [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }],
+    [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }]
+  );
 
   const [moneda, setMoneda] = useState("CRC");
   const [tipoCambio, setTipoCambio] = useState("");
@@ -60,6 +46,7 @@ export default function App() {
 
   const [guardando, setGuardando] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", type: "success" });
+  const [errores, setErrores] = useState({});
 
   const toInt = (v, fallback) => {
     const n = Number.parseInt(String(v ?? ""), 10);
@@ -91,13 +78,37 @@ export default function App() {
   const handleDescargar = async () => {
     if (guardando) return;
 
+    // Reiniciar errores
+    setErrores({});
+
+    // Validar nombre del receptor
+    const nombreReceptor = tab === "cliente"
+      ? String(cliente.nombre || "").trim()
+      : String(empresa.nombreEmpresa || "").trim();
+
+    const nuevosErrores = {};
+
+    if (!nombreReceptor) {
+      nuevosErrores.nombreReceptor = "El nombre es obligatorio";
+    }
+
     const items = buildItems();
 
     if (items.length === 0) {
-      setToast({ open: true, message: "Agrega al menos un producto o servicio", type: "error" });
+      nuevosErrores.items = "Debes agregar al menos un producto o servicio con nombre";
+    }
+
+    // Si hay errores, mostrarlos y no continuar
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores);
+      setToast({
+        open: true,
+        message: "Por favor completa los campos obligatorios",
+        type: "error"
+      });
       setTimeout(() => {
         setToast((t) => ({ ...t, open: false }));
-      }, 2500);
+      }, 3000);
       return;
     }
 
@@ -213,6 +224,7 @@ export default function App() {
           setNota={setNota}
           anexos={anexos}
           setAnexos={setAnexos}
+          errores={errores}
         />
       </div>
 
