@@ -239,10 +239,12 @@ export default function QuotePreview({
 
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-12">
           <div className="md:col-span-6 mt-6">
-            <div className="text-sm font-semibold tracking-wide text-cyan-700">
+            <div className="text-sm font-semibold tracking-wide text-cyan-700 mb-2">
               NOTAS
             </div>
-            <div className="text-sm leading-7 text-slate-600">{nota}</div>
+            <div className="text-sm leading-5 text-slate-600 whitespace-pre-line break-words">
+              {nota || "Sin notas"}
+            </div>
           </div>
           <div className="md:col-span-6">
             <div className="rounded-xl border border-slate-200 bg-white">
@@ -280,7 +282,6 @@ export default function QuotePreview({
           </div>
         </div>
 
-        {/* Sección de anexos expandible */}
         {anexos && (
           <div className="mt-8">
             <div className="rounded-xl border border-slate-200 bg-white p-5">
@@ -297,8 +298,6 @@ export default function QuotePreview({
             </div>
           </div>
         )}
-
-
       </div>
     </div>
   );
