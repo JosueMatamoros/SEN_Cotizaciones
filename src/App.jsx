@@ -2,6 +2,7 @@ import { useState } from "react";
 import FormSection from "./section/form";
 import PreviewSection from "./section/preview";
 import { generarProformaPDF } from "./pdf/generarProformaPDF";
+import { NavbarSimple } from "./components/shared/Header";
 
 export default function App() {
   const [tab, setTab] = useState("cliente");
@@ -58,6 +59,7 @@ export default function App() {
 
   return (
     <div className="w-full ">
+      <NavbarSimple />
       <button
         onClick={() =>
           generarProformaPDF({
