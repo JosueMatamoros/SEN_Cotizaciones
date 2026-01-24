@@ -57,6 +57,23 @@ async function svgToPngDataUrl(url, size) {
   });
 }
 
+async function loadFontAsBase64(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 function fitText(doc, text, maxW) {
   const t = safe(text);
   if (!t) return "";
@@ -94,6 +111,26 @@ export async function generarProformaPDF({
   nombreArchivo,
 }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+  let fontLoaded = false;
+  try {
+    const regularBase64 = await loadFontAsBase64("/assets/fonts/SourceSans3-Regular.ttf");
+    const boldBase64 = await loadFontAsBase64("/assets/fonts/SourceSans3-Bold.ttf");
+
+    doc.addFileToVFS("SourceSans3-Regular.ttf", regularBase64);
+    doc.addFont("SourceSans3-Regular.ttf", "SourceSans3", "normal");
+
+    doc.addFileToVFS("SourceSans3-Bold.ttf", boldBase64);
+    doc.addFont("SourceSans3-Bold.ttf", "SourceSans3", "bold");
+
+    doc.setFont("SourceSans3", "normal");
+    fontLoaded = true;
+
+  } catch (error) {
+    console.error("Error cargando fuentes personalizadas:", error);
+    doc.setFont("helvetica", "normal");
+  }
+
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
@@ -193,7 +230,7 @@ export async function generarProformaPDF({
 
     const label = "Fecha:";
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
     doc.setFontSize(12.5);
 
     doc.setTextColor(...azulClaroLabel);
@@ -207,7 +244,7 @@ export async function generarProformaPDF({
 
     const leftBlock = `${label} ${fechaFit}`;
 
-    doc.setFont("helvetica", "bold");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "bold");
     doc.setTextColor(...azulOscuroProforma);
 
     const maxProformaW = xRight - xLeft - doc.getTextWidth(leftBlock);
@@ -220,7 +257,7 @@ export async function generarProformaPDF({
     doc.addImage(footerImg, "PNG", 0, pageH - footerH, pageW, footerH);
 
     doc.setTextColor(180, 180, 180);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
     doc.setFontSize(8);
     doc.text(`Pagina ${pageNum} de ${pageCount}`, pageW - 6, pageH - 6, {
       align: "right",
@@ -240,7 +277,7 @@ export async function generarProformaPDF({
     const maxTextW = cardW - (textX - x) - 18;
 
     doc.setTextColor(...textoOscuro);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "bold");
     doc.setFontSize(12);
 
     const titleLines = wrapTitleTwoLines(doc, title, maxTextW);
@@ -250,7 +287,7 @@ export async function generarProformaPDF({
     doc.text(titleLines[0] || "", textX, titleY);
     if (titleLines[1]) doc.text(titleLines[1], textX, titleY + lineGap);
 
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
     doc.setFontSize(11.2);
     doc.setTextColor(...texto);
 
@@ -366,12 +403,12 @@ export async function generarProformaPDF({
     doc.roundedRect(marginX, startY, leftW, 34, 10, 10, "F");
 
     doc.setTextColor(...azulNota);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "bold");
     doc.setFontSize(14);
     doc.text("NOTAS", marginX + 16, startY + 23);
 
     doc.setTextColor(...grisTexto);
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
     doc.setFontSize(10.5);
 
     const nt =
@@ -386,7 +423,7 @@ export async function generarProformaPDF({
         doc.roundedRect(rightX, y, rowW, 44, 8, 8, "F");
 
         doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
+        doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "bold");
         doc.setFontSize(14);
 
         doc.text(label, rightX + padL, y + 28);
@@ -400,7 +437,7 @@ export async function generarProformaPDF({
       }
 
       doc.setTextColor(...negroSuave);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "bold");
       doc.setFontSize(12.5);
 
       doc.text(label, rightX + 6, y + 24);
@@ -417,7 +454,6 @@ export async function generarProformaPDF({
     drawTotalRow(startY + 78, "TOTAL:", fmtMoney(total, moneda), true);
   };
 
-  // LÍMITE INFERIOR - área segura antes del footer (reducido para más espacio)
   const bottomLimit = pageH - footerH - 10;
 
   const drawAnexosDynamic = (anexosText, startY) => {
@@ -434,8 +470,7 @@ export async function generarProformaPDF({
     const lineHeight = 12.8;
     const bottomPadding = 12;
 
-    // Preparar fuente para calcular líneas
-    doc.setFont("helvetica", "normal");
+    doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
     doc.setFontSize(10.5);
     const allLines = doc.splitTextToSize(text, contentW);
 
@@ -450,39 +485,32 @@ export async function generarProformaPDF({
     let lineIndex = 0;
 
     while (lineIndex < allLines.length) {
-      // Calcular espacio mínimo necesario para el título y al menos 2 líneas
       const minBoxHeight = contentYStart + (2 * lineHeight) + bottomPadding;
 
-      // Si no hay espacio suficiente, crear nueva página
       if (currentY + minBoxHeight > bottomLimit) {
         currentY = createNewPage();
       }
 
-      // Calcular cuántas líneas caben en el espacio disponible
       const availableHeight = bottomLimit - currentY;
       const contentAreaHeight = availableHeight - contentYStart - bottomPadding;
       const maxLinesInPage = Math.floor(contentAreaHeight / lineHeight);
 
-      // Tomar las líneas que caben
       const linesToDraw = allLines.slice(lineIndex, lineIndex + maxLinesInPage);
       const actualContentHeight = linesToDraw.length * lineHeight;
       const boxHeight = contentYStart + actualContentHeight + bottomPadding;
 
-      // Dibujar el box
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(210, 210, 210);
       doc.setLineWidth(1);
       doc.roundedRect(boxX, currentY, boxW, boxHeight, 10, 10, "FD");
 
-      // Dibujar título
       doc.setTextColor(64, 155, 201);
-      doc.setFont("helvetica", "bold");
+      doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "bold");
       doc.setFontSize(14);
       doc.text("ANEXOS", boxX + 16, currentY + titleYOffset);
 
-      // Dibujar contenido
       doc.setTextColor(90, 90, 90);
-      doc.setFont("helvetica", "normal");
+      doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
       doc.setFontSize(10.5);
 
       let textY = currentY + contentYStart;
@@ -491,11 +519,9 @@ export async function generarProformaPDF({
         textY += lineHeight;
       }
 
-      // Actualizar índice y posición
       lineIndex += linesToDraw.length;
       currentY = currentY + boxHeight + 18;
 
-      // Si quedan más líneas y no cabría otro box, crear nueva página
       if (lineIndex < allLines.length) {
         if (currentY + minBoxHeight > bottomLimit) {
           currentY = createNewPage();
@@ -516,7 +542,7 @@ export async function generarProformaPDF({
     head: [["DESCRIPCIÓN", "PRECIO", "CANT.", "TOTAL"]],
     body: rows.length ? rows : [["", "", "", ""]],
     styles: {
-      font: "helvetica",
+      font: fontLoaded ? "SourceSans3" : "helvetica",
       fontSize: 10.5,
       cellPadding: 10,
       lineColor: [208, 232, 242],
