@@ -22,9 +22,9 @@ function formatThousands(value) {
   if (normalized === "") return "";
 
   const parts = normalized.split(".");
-  const intRaw = parts[0] ?? "";
+  let intRaw = parts[0] ?? "";
   const decRaw = parts[1] ?? "";
-
+  intRaw = intRaw.replace(/^0+/, "") || "0";
   const intFormatted = intRaw.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return decRaw !== "" ? intFormatted + "." + decRaw : intFormatted;
 }
@@ -64,8 +64,17 @@ export default function CurrencyInput({
           placeholder={placeholder}
           value={displayValue}
           onChange={(e) => {
-            const raw = e.target.value;
-            const normalized = onlyDigitsAndDot(raw);
+            let raw = e.target.value;
+            let normalized = onlyDigitsAndDot(raw);
+
+            if (normalized.includes(".")) {
+              const parts = normalized.split(".");
+              parts[0] = parts[0].replace(/^0+/, "") || "0";
+              normalized = parts.join(".");
+            } else {
+              normalized = normalized.replace(/^0+/, "") || "";
+            }
+
             onChange(normalized);
           }}
         />

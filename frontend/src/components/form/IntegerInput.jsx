@@ -35,7 +35,9 @@ export default function IntegerInput({
         placeholder={placeholder}
         value={displayValue}
         onChange={(e) => {
-          const cleaned = onlyDigits(e.target.value);
+          let cleaned = onlyDigits(e.target.value);
+          cleaned = cleaned.replace(/^0+/, "");
+
           if (cleaned === "") {
             onChange("");
             return;

@@ -38,6 +38,28 @@ export default function App() {
     [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }]
   );
 
+  // Función para limpiar errores de items cuando hay cambios
+  const clearItemsError = () => {
+    if (errores.items) {
+      setErrores((prev) => {
+        const { items, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  // Wrapper para setProductos que limpia errores
+  const setProductosWithClear = (updateFn) => {
+    setProductos(updateFn);
+    clearItemsError();
+  };
+
+  // Wrapper para setServicios que limpia errores
+  const setServiciosWithClear = (updateFn) => {
+    setServicios(updateFn);
+    clearItemsError();
+  };
+
   const [moneda, setMoneda] = useState("CRC");
   const [tipoCambio, setTipoCambio] = useState("");
   const [aplicarIVA, setAplicarIVA] = useState(false);
@@ -137,7 +159,7 @@ export default function App() {
       const res = await createProforma(payload);
       console.log("Proforma guardada", res);
 
-      setToast({ open: true, message: "Proforma guardada correctamente", type: "success" });
+      setToast({ open: true, message: "El documento ha sido creado y está listo para descargar.", type: "success" });
 
       generarProformaPDF({
         fechaTexto: new Date().toLocaleDateString("es-CR", {
@@ -160,7 +182,7 @@ export default function App() {
       console.log("Error guardando proforma", e?.message || e);
       setToast({
         open: true,
-        message: `Error guardando proforma: ${e?.message || "desconocido"}`,
+        message: `Por favor, verifica que todos los campos requeridos estén completos.`,
         type: "error",
       });
     } finally {
@@ -211,9 +233,9 @@ export default function App() {
           empresa={empresa}
           setEmpresa={setEmpresa}
           productos={productos}
-          setProductos={setProductos}
+          setProductos={setProductosWithClear}
           servicios={servicios}
-          setServicios={setServicios}
+          setServicios={setServiciosWithClear}
           moneda={moneda}
           setMoneda={setMoneda}
           tipoCambio={tipoCambio}
@@ -229,26 +251,54 @@ export default function App() {
       </div>
 
       {toast.open ? (
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-right">
           <div
             className={[
-              "rounded-lg px-4 py-3 shadow-lg border text-sm font-medium bg-white",
-              toast.type === "success" ? "border-green-200" : "border-red-200",
+              "rounded-xl px-4 py-4 shadow-xl border text-sm font-medium min-w-[320px] max-w-md",
+              toast.type === "success" ? "bg-cyan-50 border-cyan-200" : "bg-red-50 border-red-200",
             ].join(" ")}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               <div
                 className={[
-                  "h-2 w-2 rounded-full",
-                  toast.type === "success" ? "bg-green-500" : "bg-red-500",
+                  "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
+                  toast.type === "success" ? "bg-cyan-100" : "bg-red-100",
                 ].join(" ")}
-              />
-              <p className="text-slate-800">{toast.message}</p>
+              >
+                {toast.type === "success" ? (
+                  <svg className="w-4 h-4 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+              </div>
+
+              <div className="flex-1">
+                <p className={[
+                  "font-semibold mb-1",
+                  toast.type === "success" ? "text-cyan-900" : "text-red-900"
+                ].join(" ")}>
+                  {toast.type === "success" ? "PDF generado correctamente" : "Error en el campo"}
+                </p>
+                <p className={[
+                  "text-sm",
+                  toast.type === "success" ? "text-cyan-700" : "text-red-700"
+                ].join(" ")}>
+                  {toast.message}
+                </p>
+              </div>
+
               <button
                 onClick={() => setToast((t) => ({ ...t, open: false }))}
-                className="ml-2 text-slate-500 hover:text-slate-700"
+                className={[
+                  "flex-shrink-0 text-lg leading-none hover:opacity-70 transition-opacity",
+                  toast.type === "success" ? "text-cyan-400" : "text-red-400"
+                ].join(" ")}
               >
-                Cerrar
+                ✕
               </button>
             </div>
           </div>
