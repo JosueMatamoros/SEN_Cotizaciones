@@ -3,6 +3,7 @@ import Field from "../components/form/Field";
 import Tabs from "../components/form/Tabs";
 import Accordion from "../components/form/Accordion";
 import Card from "../components/form/Card";
+import AnexosTextarea from "../components/form/AnexosTextarea";
 import { User, Box, Wrench, PencilLine, FileText } from "../utils/icons";
 import ItemsSection from "../components/form/ItemsSection";
 import CustomSelect from "../components/form/CustomSelect";
@@ -29,6 +30,8 @@ export default function FormSection({
   setAplicarIVA,
   nota,
   setNota,
+  anexos,
+  setAnexos,
 }) {
   return (
     <section className="w-full p-6">
@@ -193,6 +196,10 @@ export default function FormSection({
             value={nota}
             onChange={e => setNota(e.target.value)}
           />
+        </Card>
+
+        <Card title="Anexos" className="mt-8" icon={<FileText size={20} />}>
+          <AnexosTextarea value={anexos} onChange={e => setAnexos(e.target.value)} />
         </Card>
       </div>
     </section>

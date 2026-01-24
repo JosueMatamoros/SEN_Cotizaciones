@@ -9,6 +9,7 @@ export default function PreviewSection({
   tipoCambio,
   aplicarIVA,
   nota,
+  anexos,
 }) {
   return (
     <section className="w-full p-6 ">
@@ -22,6 +23,7 @@ export default function PreviewSection({
           tipoCambio={tipoCambio}
           aplicarIVA={aplicarIVA}
           nota={nota}
+          anexos={anexos}
         />
       </div>
     </section>

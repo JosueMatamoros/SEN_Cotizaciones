@@ -1,4 +1,5 @@
 import { Mail, Phone, Globe, MapPin, User } from "lucide-react";
+import React from "react";
 
 function toNumber(value) {
   if (value === "" || value === null || value === undefined) return 0;
@@ -80,13 +81,19 @@ export default function QuotePreview({
   aplicarIVA = false,
   ivaRate = 0.13,
   nota = "",
+  anexos = "",
 }) {
+  const [expandido, setExpandido] = React.useState(false);
+  const maxChars = 1300;
+  const isLong = anexos.length > maxChars;
+  const textoMostrar = !expandido && isLong ? anexos.slice(0, maxChars) + "..." : anexos;
   const items = normalizeItems(productos, servicios);
 
   const tipoCambioFinal = getTipoCambio(tipoCambio, 520);
   const isUSD = moneda === "USD";
 
-  const convert = (amountCRC) => (isUSD ? amountCRC / tipoCambioFinal : amountCRC);
+  const convert = (amountCRC) =>
+    isUSD ? amountCRC / tipoCambioFinal : amountCRC;
   const currencyToShow = isUSD ? "USD" : "CRC";
 
   const subtotalCRC = items.reduce(
@@ -113,8 +120,14 @@ export default function QuotePreview({
                 </div>
                 <div className="mt-3 space-y-2">
                   <InfoLine icon={<Phone size={18} />} text="61350349" />
-                  <InfoLine icon={<Mail size={18} />} text="soldelnorte.ceo@gmail.com" />
-                  <InfoLine icon={<Globe size={18} />} text="https://solusioneselectricas.com" />
+                  <InfoLine
+                    icon={<Mail size={18} />}
+                    text="soldelnorte.ceo@gmail.com"
+                  />
+                  <InfoLine
+                    icon={<Globe size={18} />}
+                    text="https://solusioneselectricas.com"
+                  />
                 </div>
               </div>
             </div>
@@ -129,23 +142,38 @@ export default function QuotePreview({
 
                 <div className="mt-3 space-y-2">
                   {receptor?.correo ? (
-                    <InfoLine icon={<Mail size={18} />} text={receptor.correo} />
+                    <InfoLine
+                      icon={<Mail size={18} />}
+                      text={receptor.correo}
+                    />
                   ) : null}
 
                   {receptor?.numero ? (
-                    <InfoLine icon={<Phone size={18} />} text={receptor.numero} />
+                    <InfoLine
+                      icon={<Phone size={18} />}
+                      text={receptor.numero}
+                    />
                   ) : null}
 
                   {receptor?.direccion ? (
-                    <InfoLine icon={<MapPin size={18} />} text={receptor.direccion} />
+                    <InfoLine
+                      icon={<MapPin size={18} />}
+                      text={receptor.direccion}
+                    />
                   ) : null}
 
                   {receptor?.tipo === "empresa" && receptor?.asesorNombre ? (
-                    <InfoLine icon={<User size={18} />} text={`Asesor: ${receptor.asesorNombre}`} />
+                    <InfoLine
+                      icon={<User size={18} />}
+                      text={`Asesor: ${receptor.asesorNombre}`}
+                    />
                   ) : null}
 
                   {receptor?.tipo === "empresa" && receptor?.asesorNumero ? (
-                    <InfoLine icon={<Phone size={18} />} text={receptor.asesorNumero} />
+                    <InfoLine
+                      icon={<Phone size={18} />}
+                      text={receptor.asesorNumero}
+                    />
                   ) : null}
                 </div>
               </div>
@@ -210,7 +238,13 @@ export default function QuotePreview({
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-12">
-          <div className="md:col-span-8">
+          <div className="md:col-span-6 mt-6">
+            <div className="text-sm font-semibold tracking-wide text-cyan-700">
+              NOTAS
+            </div>
+            <div className="text-sm leading-7 text-slate-600">{nota}</div>
+          </div>
+          <div className="md:col-span-6">
             <div className="rounded-xl border border-slate-200 bg-white">
               <div className="p-5">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-4">
@@ -241,21 +275,30 @@ export default function QuotePreview({
                     </div>
                   </div>
                 </div>
-
-
               </div>
             </div>
           </div>
         </div>
 
-        <div className="md:col-span-7 mt-6">
-          <div className="text-sm font-semibold tracking-wide text-cyan-700">
-            NOTAS
+        {/* Sección de anexos expandible */}
+        {anexos && (
+          <div className="mt-8">
+            <div className="rounded-xl border border-slate-200 bg-white p-5">
+              <div className="text-sm font-semibold text-slate-600 mb-2">Anexos:</div>
+              <div className="text-slate-700 whitespace-pre-line break-words">{textoMostrar}</div>
+              {isLong && (
+                <button
+                  className="mt-2 text-cyan-700 underline text-xs font-semibold"
+                  onClick={() => setExpandido((e) => !e)}
+                >
+                  {expandido ? "Mostrar menos" : "Mostrar todo"}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="text-sm leading-7 text-slate-600">
-            {nota}
-          </div>
-        </div>
+        )}
+
+
       </div>
     </div>
   );

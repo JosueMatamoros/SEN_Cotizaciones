@@ -54,6 +54,7 @@ export default function App() {
   const [tipoCambio, setTipoCambio] = useState("");
   const [aplicarIVA, setAplicarIVA] = useState(false);
   const [nota, setNota] = useState("");
+  const [anexos, setAnexos] = useState("");
 
   return (
     <div className="w-full ">
@@ -73,6 +74,7 @@ export default function App() {
             tipoCambio,
             aplicarIVA,
             nota,
+            anexos,
             nombreArchivo: "proforma.pdf",
           })
         }
@@ -91,6 +93,7 @@ export default function App() {
           tipoCambio={tipoCambio}
           aplicarIVA={aplicarIVA}
           nota={nota}
+          anexos={anexos}
         />
 
         <FormSection
@@ -114,6 +117,8 @@ export default function App() {
           setAplicarIVA={setAplicarIVA}
           nota={nota}
           setNota={setNota}
+          anexos={anexos}
+          setAnexos={setAnexos}
         />
       </div>
     </div>

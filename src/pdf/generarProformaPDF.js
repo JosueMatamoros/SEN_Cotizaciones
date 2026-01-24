@@ -90,6 +90,7 @@ export async function generarProformaPDF({
   tipoCambio,
   aplicarIVA,
   nota,
+  anexos,
   nombreArchivo,
 }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -264,18 +265,15 @@ export async function generarProformaPDF({
       yy += 19;
     }
 
-    // Dibujar asesor si existe
     if (asesorData && (asesorData.nombre || asesorData.numero)) {
       const asesorY = yy;
       const iconSize = 14;
       const spacing = 8;
 
-      // Icono de asesor
       doc.addImage(icons.asesor, "PNG", textX, asesorY - 11, iconSize, iconSize);
 
       let currentX = textX + iconSize + spacing;
 
-      // Nombre del asesor (si existe)
       if (asesorData.nombre) {
         doc.setFontSize(11.2);
         const nombreWidth = doc.getTextWidth(asesorData.nombre);
@@ -283,12 +281,15 @@ export async function generarProformaPDF({
         currentX += nombreWidth + spacing + 4;
       }
 
-      // Icono de teléfono y número del asesor (si existe)
       if (asesorData.numero) {
         doc.addImage(icons.phone, "PNG", currentX, asesorY - 11, iconSize, iconSize);
         currentX += iconSize + spacing;
         doc.setFontSize(11.2);
-        doc.text(fitText(doc, asesorData.numero, maxTextW - (currentX - textX)), currentX, asesorY);
+        doc.text(
+          fitText(doc, asesorData.numero, maxTextW - (currentX - textX)),
+          currentX,
+          asesorY
+        );
       }
     }
   };
@@ -311,15 +312,18 @@ export async function generarProformaPDF({
       const asesorNombre = safe(receptorFinal.asesorNombre).trim();
       const asesorNumero = safe(receptorFinal.asesorNumero).trim();
       if (asesorNombre || asesorNumero) {
-        asesorData = {
-          nombre: asesorNombre || null,
-          numero: asesorNumero || null
-        };
+        asesorData = { nombre: asesorNombre || null, numero: asesorNumero || null };
       }
     }
 
     drawCompactCard(marginX, yCards, empresa.nombre, empresaLines);
-    drawCompactCard(marginX + cardW + gap, yCards, safe(receptorFinal?.nombre), receptorLines, asesorData);
+    drawCompactCard(
+      marginX + cardW + gap,
+      yCards,
+      safe(receptorFinal?.nombre),
+      receptorLines,
+      asesorData
+    );
   };
 
   const rows = items.map((it) => [
@@ -413,6 +417,95 @@ export async function generarProformaPDF({
     drawTotalRow(startY + 78, "TOTAL:", fmtMoney(total, moneda), true);
   };
 
+  // LÍMITE INFERIOR - área segura antes del footer (reducido para más espacio)
+  const bottomLimit = pageH - footerH - 10;
+
+  const drawAnexosDynamic = (anexosText, startY) => {
+    const text = String(anexosText || "").trim();
+    if (!text) return startY;
+
+    const boxX = marginX;
+    const boxW = pageW - marginX * 2;
+    const contentX = boxX + 16;
+    const contentW = boxW - 32;
+
+    const titleYOffset = 20;
+    const contentYStart = 45;
+    const lineHeight = 12.8;
+    const bottomPadding = 12;
+
+    // Preparar fuente para calcular líneas
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    const allLines = doc.splitTextToSize(text, contentW);
+
+    const createNewPage = () => {
+      doc.addPage();
+      drawHeader();
+      drawHeaderFechaHora();
+      return headerH + 24;
+    };
+
+    let currentY = startY;
+    let lineIndex = 0;
+
+    while (lineIndex < allLines.length) {
+      // Calcular espacio mínimo necesario para el título y al menos 2 líneas
+      const minBoxHeight = contentYStart + (2 * lineHeight) + bottomPadding;
+
+      // Si no hay espacio suficiente, crear nueva página
+      if (currentY + minBoxHeight > bottomLimit) {
+        currentY = createNewPage();
+      }
+
+      // Calcular cuántas líneas caben en el espacio disponible
+      const availableHeight = bottomLimit - currentY;
+      const contentAreaHeight = availableHeight - contentYStart - bottomPadding;
+      const maxLinesInPage = Math.floor(contentAreaHeight / lineHeight);
+
+      // Tomar las líneas que caben
+      const linesToDraw = allLines.slice(lineIndex, lineIndex + maxLinesInPage);
+      const actualContentHeight = linesToDraw.length * lineHeight;
+      const boxHeight = contentYStart + actualContentHeight + bottomPadding;
+
+      // Dibujar el box
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(1);
+      doc.roundedRect(boxX, currentY, boxW, boxHeight, 10, 10, "FD");
+
+      // Dibujar título
+      doc.setTextColor(64, 155, 201);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text("ANEXOS", boxX + 16, currentY + titleYOffset);
+
+      // Dibujar contenido
+      doc.setTextColor(90, 90, 90);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+
+      let textY = currentY + contentYStart;
+      for (const line of linesToDraw) {
+        doc.text(line, contentX, textY);
+        textY += lineHeight;
+      }
+
+      // Actualizar índice y posición
+      lineIndex += linesToDraw.length;
+      currentY = currentY + boxHeight + 18;
+
+      // Si quedan más líneas y no cabría otro box, crear nueva página
+      if (lineIndex < allLines.length) {
+        if (currentY + minBoxHeight > bottomLimit) {
+          currentY = createNewPage();
+        }
+      }
+    }
+
+    return currentY;
+  };
+
   drawHeader();
   drawHeaderFechaHora();
   drawCards();
@@ -465,9 +558,7 @@ export async function generarProformaPDF({
 
   const tableEndY = doc.lastAutoTable ? doc.lastAutoTable.finalY : yTable;
   const paddingAfterTable = 18;
-
   const blockH = 148;
-  const bottomLimit = pageH - footerH - 30;
 
   let yNotesTotals = tableEndY + paddingAfterTable;
 
@@ -480,6 +571,14 @@ export async function generarProformaPDF({
 
   drawNotesTotals(yNotesTotals);
 
+  if (anexos && String(anexos).trim()) {
+    doc.addPage();
+    drawHeader();
+    drawHeaderFechaHora();
+    let anexosY = headerH + 24;
+    anexosY = drawAnexosDynamic(anexos, anexosY);
+  }
+
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -488,6 +587,7 @@ export async function generarProformaPDF({
     drawFooter(i, totalPages);
   }
 
-  const name = safe(nombreArchivo).trim() || `Proforma_${safe(numeroProforma).replace("#", "")}.pdf`;
+  const name =
+    safe(nombreArchivo).trim() || `Proforma_${safe(numeroProforma).replace("#", "")}.pdf`;
   doc.save(name);
 }
