@@ -195,20 +195,7 @@ export default function App() {
 
   return (
     <div className="w-full ">
-      <NavbarSimple />
-
-      <button
-        onClick={handleDescargar}
-        disabled={guardando}
-        className={[
-          "bg-sky-500 text-white px-4 py-2 rounded font-semibold mx-auto block",
-          "transition-transform duration-150 ease-out",
-          "hover:bg-sky-600 hover:scale-[1.02] active:scale-[0.98]",
-          guardando ? "opacity-70 cursor-not-allowed" : "",
-        ].join(" ")}
-      >
-        {guardando ? "Guardando..." : "Descargar"}
-      </button>
+      <NavbarSimple onDescargar={handleDescargar} guardando={guardando} />
 
       <div className="w-full flex flex-col-reverse lg:flex-row">
         <PreviewSection
