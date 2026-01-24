@@ -1,11 +1,12 @@
 import "dotenv/config";
 import express from "express";
 import proformaRoutes from "./routes/proforma.routes.js";
+import cors from "cors";
 
 const app = express();
 
 app.use(express.json({ limit: "2mb" }));
-
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use("/proformas", proformaRoutes);
 
 app.use((err, req, res, next) => {
