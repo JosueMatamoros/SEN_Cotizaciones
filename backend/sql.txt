@@ -1,0 +1,24 @@
+create table proforma (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+
+  party_type text not null check (party_type in ('CLIENT', 'COMPANY')),
+  party_name text not null,
+
+  party_phone text null,
+  party_email text null,
+  party_location text null,
+
+  advisor_name text null,
+  advisor_phone text null,
+
+  notes text null,
+  annex text null,
+
+  items jsonb not null
+);
+
+
+alter table proforma
+add constraint proforma_items_is_array_check
+check (jsonb_typeof(items) = 'array');
