@@ -48,7 +48,7 @@ export default function CurrencyInput({
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700 whitespace-nowrap">
+      <label className="mb-1 block text-sm font-medium text-slate-700 whitespace-nowrap">
         {label}
       </label>
 

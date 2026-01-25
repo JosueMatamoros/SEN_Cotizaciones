@@ -24,7 +24,7 @@ export default function IntegerInput({
 
   return (
     <div>
-      <label className="mb-2 block text-sm font-medium text-slate-700">
+      <label className="mb-1 block text-sm font-medium text-slate-700">
         {label}
       </label>
 
