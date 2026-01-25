@@ -4,7 +4,7 @@ import FormSection from "./section/form";
 import PreviewSection from "./section/preview";
 import { generarProformaPDF } from "./pdf/generarProformaPDF";
 import { NavbarSimple } from "./components/shared/Header";
-import { createProforma } from "./services/api";
+// import { createProforma } from "./services/api";
 
 export default function App() {
   const [tab, setTab] = useState("cliente");
@@ -154,13 +154,8 @@ export default function App() {
     };
 
     setGuardando(true);
-
     try {
-      const res = await createProforma(payload);
-      console.log("Proforma guardada", res);
-
       setToast({ open: true, message: "El documento ha sido creado y está listo para descargar.", type: "success" });
-
       generarProformaPDF({
         fechaTexto: new Date().toLocaleDateString("es-CR", {
           day: "numeric",
@@ -179,7 +174,6 @@ export default function App() {
         nombreArchivo: "proforma.pdf",
       });
     } catch (e) {
-      console.log("Error guardando proforma", e?.message || e);
       setToast({
         open: true,
         message: `Por favor, verifica que todos los campos requeridos estén completos.`,
@@ -248,7 +242,7 @@ export default function App() {
             <div className="flex items-start gap-3">
               <div
                 className={[
-                  "flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
+                  "shrink-0 w-6 h-6 rounded-full flex items-center justify-center",
                   toast.type === "success" ? "bg-cyan-100" : "bg-red-100",
                 ].join(" ")}
               >
@@ -281,7 +275,7 @@ export default function App() {
               <button
                 onClick={() => setToast((t) => ({ ...t, open: false }))}
                 className={[
-                  "flex-shrink-0 text-lg leading-none hover:opacity-70 transition-opacity",
+                  "shrink-0 text-lg leading-none hover:opacity-70 transition-opacity",
                   toast.type === "success" ? "text-cyan-400" : "text-red-400"
                 ].join(" ")}
               >
