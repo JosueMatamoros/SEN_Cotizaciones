@@ -99,6 +99,11 @@ export default function FormSection({
           />
         </div>
 
+        {/* Línea separadora tipo dot */}
+        <div className="flex items-center justify-center mb-5">
+          <hr className="flex-1 border-dotted border-t-2 border-slate-300" />
+        </div>
+
         {/* Servicios */}
         <div className="mb-10">
           <ItemsSection

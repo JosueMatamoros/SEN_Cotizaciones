@@ -1,8 +1,9 @@
+import React from "react";
 import { Plus, Trash2 } from "../../utils/icons";
 import Field from "./Field";
-import Card from "./Card";
 import CurrencyInput, { parseCurrencyToNumber } from "./CurrencyInput";
 import IntegerInput, { parseIntSafe } from "./IntegerInput";
+import { AnimatePresence, motion } from "framer-motion";
 
 function createItem() {
   return {
@@ -47,8 +48,14 @@ export default function ItemsSection({
       );
     };
 
+    const [removingId, setRemovingId] = React.useState(null);
+
     const removeItem = (id) => {
-      setItems((prev) => prev.filter((it) => it.id !== id));
+      setRemovingId(id);
+      setTimeout(() => {
+        setItems((prev) => prev.filter((it) => it.id !== id));
+        setRemovingId(null);
+      }, 250); // Duración de la animación
     };
 
     return (
@@ -73,60 +80,66 @@ export default function ItemsSection({
             Haz clic en "{addLabel}" para comenzar
           </div>
         ) : (
-          <div className="space-y-4">
-
-            {items.map((it) => {
-              const cantidad = parseIntSafe(it.cantidad, 1);
-              const precioUnitario = parseCurrencyToNumber(it.precioUnitario);
-              const totalLinea = precioUnitario * cantidad;
-              const hasError = error && !it.nombre.trim();
-              return (
-                <div
-                  key={it.id}
-                  className="flex w-full items-end gap-3"
-                >
-                  <div className="flex-[2.5]">
-                    <Field
-                      label="Descripción"
-                      placeholder={namePlaceholder}
-                      value={it.nombre}
-                      onChange={(v) => updateItem(it.id, { nombre: v })}
-                      error={hasError ? "El nombre es obligatorio" : undefined}
-                    />
-                  </div>
-                  <div className="w-24">
-                    <IntegerInput
-                      label="Cantidad"
-                      placeholder="1"
-                      value={it.cantidad}
-                      onChange={(v) => updateItem(it.id, { cantidad: v })}
-                      min={1}
-                    />
-                  </div>
-                  <div className="w-36 relative">
-                    <CurrencyInput
-                      label="Precio"
-                      placeholder="0"
-                      value={it.precioUnitario}
-                      onChange={(v) => updateItem(it.id, { precioUnitario: v })}
-                      currency={currency}
-                      currencySymbol={currencySymbol}
-                    />
-                    <span className="absolute left-0 top-full mt-1 text-sm font-semibold text-emerald-600 whitespace-nowrap">
-                      {formatMoney(totalLinea, currency)}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeItem(it.id)}
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 ml-2"
-                    aria-label="Eliminar"
+          <div className="space-y-8">
+            <AnimatePresence initial={false}>
+              {items.map((it) => {
+                const cantidad = parseIntSafe(it.cantidad, 1);
+                const precioUnitario = parseCurrencyToNumber(it.precioUnitario);
+                const totalLinea = precioUnitario * cantidad;
+                const hasError = error && !it.nombre.trim();
+                return (
+                  <motion.div
+                    key={it.id}
+                    layout
+                    initial={{ opacity: 1, x: 0 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.15, ease: 'easeInOut' }}
+                    className="flex w-full items-end gap-3"
                   >
-                    <Trash2 size={22} />
-                  </button>
-                </div>
-              );
-            })}
+                    <div className="flex-[2.5]">
+                      <Field
+                        label="Descripción"
+                        placeholder={namePlaceholder}
+                        value={it.nombre}
+                        onChange={(v) => updateItem(it.id, { nombre: v })}
+                        error={hasError ? "El nombre es obligatorio" : undefined}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <IntegerInput
+                        label="Cantidad"
+                        placeholder="1"
+                        value={it.cantidad}
+                        onChange={(v) => updateItem(it.id, { cantidad: v })}
+                        min={1}
+                      />
+                    </div>
+                    <div className="w-36 relative">
+                      <CurrencyInput
+                        label="Precio"
+                        placeholder="0"
+                        value={it.precioUnitario}
+                        onChange={(v) => updateItem(it.id, { precioUnitario: v })}
+                        currency={currency}
+                        currencySymbol={currencySymbol}
+                      />
+                      <span className="absolute left-0 top-full mt-1 text-sm font-semibold text-emerald-600 whitespace-nowrap">
+                        {formatMoney(totalLinea, currency)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(it.id)}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50"
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
         )}
       </div>
