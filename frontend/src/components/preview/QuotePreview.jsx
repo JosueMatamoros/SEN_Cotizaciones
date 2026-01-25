@@ -20,13 +20,15 @@ function getTipoCambio(value, fallback = 520) {
 function formatMoney(amount, currency) {
   const n = Number.isFinite(amount) ? amount : 0;
   try {
+    const isCRC = currency === "CRC";
     return new Intl.NumberFormat("es-CR", {
       style: "currency",
       currency,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: isCRC ? 0 : 2,
+      maximumFractionDigits: isCRC ? 0 : 2,
     }).format(n);
   } catch {
-    return String(n.toFixed(2));
+    return String(n);
   }
 }
 
@@ -182,11 +184,11 @@ export default function QuotePreview({
         </div>
 
         <div className="mt-8 overflow-hidden rounded-xl border border-[#E2E8F0]">
-          <div className="grid grid-cols-12 bg-[#06B6D4] px-5 py-4 text-xs font-semibold tracking-wide text-white md:text-sm">
-            <div className="col-span-6">DESCRIPCIÓN</div>
-            <div className="col-span-2 text-right">PRECIO</div>
-            <div className="col-span-2 text-center">CANT.</div>
-            <div className="col-span-2 text-right">TOTAL</div>
+        <div className="grid grid-cols-12 bg-[#06B6D4] px-5 py-4 text-xs font-semibold tracking-wide text-white md:text-sm">
+            <div className="col-span-6 ">DESCRIPCIÓN</div>
+            <div className="hidden sm:block md:col-span-2 text-center">PRECIO</div>
+            <div className="hidden sm:block md:col-span-2 text-center">CANT.</div>
+            <div className="col-span-6 md:col-span-2 text-left sm:text-center">TOTAL</div>
           </div>
 
           <div className="divide-y divide-[#E2E8F0]">
@@ -209,21 +211,21 @@ export default function QuotePreview({
                     ].join(" ")}
                   >
                     <div className="col-span-6">
-                      <div className="text-sm font-semibold text-[#0F172A] md:text-base">
+                      <div className="text-sm font-semibold text-[#0F172A] text- md:text-base ">
                         {it.nombre}
                       </div>
                       {it.detalle ? (
-                        <div className="mt-1 text-sm text-[#64748B]">
+                        <div className="mt-1  text-sm text-[#64748B] ">
                           {it.detalle}
                         </div>
                       ) : null}
                     </div>
 
-                    <div className="col-span-2 text-right text-sm text-[#334155] md:text-base">
+                    <div className="hidden md:block md:col-span-2 text-right text-sm text-[#334155] md:text-base">
                       {formatMoney(precioUnitario, currencyToShow)}
                     </div>
 
-                    <div className="col-span-2 text-center text-sm text-[#334155] md:text-base">
+                    <div className="hidden  sm:block col-span-2 text-center text-sm text-[#334155] md:text-base">
                       {it.cantidad}
                     </div>
 
@@ -237,39 +239,39 @@ export default function QuotePreview({
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-12">
-          <div className="md:col-span-6 mt-6">
+        <div className="mt-0 flex flex-col-reverse md:grid md:grid-cols-12 ">
+          <div className="md:col-span-6 mt-2 md:mt-6 pl-4 md:pl-1">
             <div className="text-sm font-semibold tracking-wide text-[#06B6D4] mb-2">
               NOTAS
             </div>
-            <div className="text-sm leading-5 text-[#334155] whitespace-pre-line break-words">
+            <div className="text-sm leading-5 text-gray-500 whitespace-pre-line break-words">
               {nota || "Sin notas"}
             </div>
           </div>
-          <div className="md:col-span-6">
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-5">
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
-                  <div className="text-sm font-semibold text-[#334155]">
-                    SUBTOTAL:
+          <div className="md:col-span-6 ">
+            <div className=" bg-[#FFFFFF]">
+              <div className="p-5 ">
+                <div className="flex items-center justify-between  py-2">
+                  <div className="text-md  text-gray-500">
+                    Subtotal:
                   </div>
-                  <div className="text-sm font-semibold text-[#0F172A]">
+                  <div className="text-lg font-semibold text-[#0F172A]">
                     {formatMoney(subtotal, currencyToShow)}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] py-4">
-                  <div className="text-sm font-semibold text-[#334155]">
+                <div className="flex items-center justify-between border-b border-[#E2E8F0] py-2 ">
+                  <div className="text-md  text-gray-500">
                     IVA ({Math.round(ivaRate * 100)}%):
                   </div>
-                  <div className="text-sm font-semibold text-[#0F172A]">
+                  <div className="text-lg font-semibold text-[#0F172A]">
                     {formatMoney(iva, currencyToShow)}
                   </div>
                 </div>
 
-                <div className="pt-5">
+                <div className="pt-2">
                   <div className="flex items-center justify-between">
-                    <div className="inline-flex items-center rounded-md bg-[#06B6D4] px-4 py-2 text-sm font-semibold text-white">
+                    <div className="inline-flex items-center rounded-xl bg-[#06B6D4] px-4 py-2 text-sm font-semibold text-white">
                       TOTAL:
                     </div>
                     <div className="text-2xl font-semibold text-[#06B6D4]">
@@ -283,9 +285,9 @@ export default function QuotePreview({
         </div>
 
         {anexos && (
-          <div className="mt-8">
+          <div className="mt-4">
             <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-5">
-              <div className="text-sm font-semibold text-[#334155] mb-2">Anexos:</div>
+              <div className="text-sm font-semibold tracking-wide text-[#06B6D4] mb-2">ANEXOS:</div>
               <div className="text-[#334155] whitespace-pre-line break-words">{textoMostrar}</div>
               {isLong && (
                 <button

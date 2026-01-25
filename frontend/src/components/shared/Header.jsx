@@ -10,9 +10,12 @@ export function NavbarSimple({ onDescargar, guardando }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <img src={logo} alt="Logo" className="h-12 w-auto" />
-            <span className="ml-2 font-bold text-lg font-roboto-slab">
-              Grupo SEN
-            </span>
+              <span
+                className="ml-2 text-2xl italic font-[cursive] font-light"
+                style={{ fontFamily: 'Dancing Script, cursive' }}
+              >
+                Si hay de otra...
+              </span>
           </div>
 
           <button
@@ -41,7 +44,8 @@ export function NavbarSimple({ onDescargar, guardando }) {
             ) : (
               <>
                 <Download size={18} />
-                <span>Descargar PDF</span>
+                <span className="block md:hidden">PDF</span>
+                <span className="hidden md:block">Descargar PDF</span>
               </>
             )}
           </button>
