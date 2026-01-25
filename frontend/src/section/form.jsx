@@ -166,7 +166,7 @@ export default function FormSection({
         />
 
         <Card title="Detalles de cotización" className="mt-8" icon={<FileText size={20} />}>
-          <div className="flex flex-col md:flex-row gap-6 items-center justify-around">
+          <div className="flex flex-col md:flex-row gap-6 items-center justify-around ">
             <div className="w-full md:w-1/3">
               <label className="block mb-2 text-sm font-medium text-slate-700">Moneda</label>
               <CustomSelect value={moneda} onChange={setMoneda} />
@@ -187,8 +187,8 @@ export default function FormSection({
               </div>
             </div>
 
-            <div className="w-full md:w-1/3 flex flex-col items-center md:items-start">
-              <label className="block mb-2 text-sm font-medium text-slate-700">Aplicar IVA</label>
+            <div className=" md:w-1/3 w-full flex flex-col items-start  ">
+              <label className="mb-2 text-sm font-medium text-slate-700">Aplicar IVA</label>
               <Toggle checked={aplicarIVA} onChange={setAplicarIVA} />
             </div>
           </div>
