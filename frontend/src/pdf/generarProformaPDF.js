@@ -197,11 +197,20 @@ export async function generarProformaPDF({
   const productosFinal = Array.isArray(productos) ? productos : [];
   const serviciosFinal = Array.isArray(servicios) ? servicios : [];
 
+  // ✅ CONVERSIÓN DE MONEDA
+  const tipoCambioFinal = toNum(tipoCambio) > 0 ? toNum(tipoCambio) : 520;
+  const isUSD = moneda === "USD";
+
+  const convertirMoneda = (montoCRC) => {
+    return isUSD ? montoCRC / tipoCambioFinal : montoCRC;
+  };
+
   const items = [...productosFinal, ...serviciosFinal]
     .filter((i) => i && (safe(i.nombre).trim() || toNum(i.precioUnitario) || toNum(i.cantidad)))
     .map((i) => {
       const cantidad = toNum(i.cantidad || 0);
-      const precio = toNum(i.precioUnitario || 0);
+      const precioCRC = toNum(i.precioUnitario || 0);
+      const precio = convertirMoneda(precioCRC);
       const totalIt = cantidad * precio;
       return { nombre: safe(i.nombre), cantidad, precio, total: totalIt };
     });
