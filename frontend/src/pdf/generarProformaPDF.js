@@ -179,20 +179,7 @@ export async function generarProformaPDF({
     direccion: "",
   };
 
-  const receptorFinal =
-    receptor &&
-    (safe(receptor.nombre).trim() ||
-      safe(receptor.correo).trim() ||
-      safe(receptor.numero).trim() ||
-      safe(receptor.direccion).trim())
-      ? receptor
-      : {
-          tipo: "cliente",
-          nombre: "Cliente de Prueba",
-          correo: "cliente.prueba@gmail.com",
-          numero: "8888-8888",
-          direccion: "San Jose, Costa Rica",
-        };
+  const receptorFinal = receptor;
 
   const productosFinal = Array.isArray(productos) ? productos : [];
   const serviciosFinal = Array.isArray(servicios) ? servicios : [];
@@ -206,7 +193,7 @@ export async function generarProformaPDF({
   };
 
   const items = [...productosFinal, ...serviciosFinal]
-    .filter((i) => i && (safe(i.nombre).trim() || toNum(i.precioUnitario) || toNum(i.cantidad)))
+    .filter((i) => i && safe(i.nombre).trim())
     .map((i) => {
       const cantidad = toNum(i.cantidad || 0);
       const precioCRC = toNum(i.precioUnitario || 0);
@@ -420,9 +407,7 @@ export async function generarProformaPDF({
     doc.setFont(fontLoaded ? "SourceSans3" : "helvetica", "normal");
     doc.setFontSize(10.5);
 
-    const nt =
-      safe(nota).trim() ||
-      "El pago vence al recibir esta proforma. Por favor realice el pago a los datos bancarios proporcionados o contáctenos si tiene alguna pregunta o necesita más información.";
+    const nt = safe(nota).trim() || "...";
 
     doc.text(doc.splitTextToSize(nt, leftW - 32), marginX + 16, startY + 52);
 
@@ -622,7 +607,6 @@ export async function generarProformaPDF({
     drawFooter(i, totalPages);
   }
 
-  const name =
-    safe(nombreArchivo).trim() || `Proforma_${safe(numeroProforma).replace("#", "")}.pdf`;
+  const name = "Proforma.pdf";
   doc.save(name);
 }

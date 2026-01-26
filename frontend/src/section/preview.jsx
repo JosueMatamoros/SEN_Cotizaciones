@@ -12,7 +12,7 @@ export default function PreviewSection({
   anexos,
 }) {
   return (
-    <section className="w-full p-6 ">
+    <section className="w-full p-4 ">
       <div className="mx-auto w-full">
         <QuotePreview
           tab={tab}
