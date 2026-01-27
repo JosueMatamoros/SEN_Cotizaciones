@@ -185,10 +185,10 @@ export default function QuotePreview({
 
         <div className="mt-8 overflow-hidden rounded-xl border border-[#E2E8F0]">
         <div className="grid grid-cols-12 bg-[#06B6D4] px-5 py-4 text-xs font-semibold tracking-wide text-white md:text-sm">
-            <div className="col-span-6 ">DESCRIPCIÓN</div>
+            <div className="col-span-8">DESCRIPCIÓN</div>
             <div className="hidden sm:block md:col-span-2 text-center">PRECIO</div>
             <div className="hidden sm:block md:col-span-2 text-center">CANT.</div>
-            <div className="col-span-6 md:col-span-2 text-left sm:text-center">TOTAL</div>
+            <div className="col-span-4 text-left sm:text-center">TOTAL</div>
           </div>
 
           <div className="divide-y divide-[#E2E8F0]">
@@ -210,7 +210,7 @@ export default function QuotePreview({
                       alt ? "bg-slate-50" : "bg-white",
                     ].join(" ")}
                   >
-                    <div className="col-span-6">
+                    <div className="col-span-8">
                       <div className="text-sm font-semibold text-[#0F172A] text- md:text-base ">
                         {it.nombre}
                       </div>
@@ -229,7 +229,7 @@ export default function QuotePreview({
                       {it.cantidad}
                     </div>
 
-                    <div className="col-span-2 text-right text-sm font-semibold text-[#0F172A] md:text-base">
+                    <div className="col-span-4 text-left text-sm font-semibold text-[#0F172A] md:text-base">
                       {formatMoney(lineTotal, currencyToShow)}
                     </div>
                   </div>

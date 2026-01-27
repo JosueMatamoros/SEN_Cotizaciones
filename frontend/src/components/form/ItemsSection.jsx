@@ -95,9 +95,10 @@ export default function ItemsSection({
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -100 }}
                     transition={{ duration: 0.15, ease: 'easeInOut' }}
-                    className="flex w-full items-end gap-3"
+                    className="flex flex-col w-full gap-2 sm:gap-3 sm:flex-row sm:items-end"
                   >
-                    <div className="flex-[2.5]">
+                    {/* Nombre en una línea en mobile, a la izquierda en desktop */}
+                    <div className="sm:flex-[2.5]">
                       <Field
                         label="Descripción"
                         placeholder={namePlaceholder}
@@ -106,36 +107,39 @@ export default function ItemsSection({
                         error={hasError ? "El nombre es obligatorio" : undefined}
                       />
                     </div>
-                    <div className="w-24">
-                      <IntegerInput
-                        label="Cantidad"
-                        placeholder="1"
-                        value={it.cantidad}
-                        onChange={(v) => updateItem(it.id, { cantidad: v })}
-                        min={1}
-                      />
+                    {/* Agrupar cantidad, precio y botón en una fila en mobile, columna en desktop */}
+                    <div className="flex flex-row gap-2 sm:gap-3">
+                      <div className="w-20 sm:w-24">
+                        <IntegerInput
+                          label="Cantidad"
+                          placeholder="1"
+                          value={it.cantidad}
+                          onChange={(v) => updateItem(it.id, { cantidad: v })}
+                          min={1}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 sm:w-36 relative">
+                        <CurrencyInput
+                          label="Precio"
+                          placeholder="0"
+                          value={it.precioUnitario}
+                          onChange={(v) => updateItem(it.id, { precioUnitario: v })}
+                          currency={currency}
+                          currencySymbol={currencySymbol}
+                        />
+                        <span className="absolute left-0 top-full mt-1 text-sm font-semibold text-emerald-600 whitespace-nowrap">
+                          {formatMoney(totalLinea, currency)}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(it.id)}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 mt-auto"
+                        aria-label="Eliminar"
+                      >
+                        <Trash2 size={20} />
+                      </button>
                     </div>
-                    <div className="w-36 relative">
-                      <CurrencyInput
-                        label="Precio"
-                        placeholder="0"
-                        value={it.precioUnitario}
-                        onChange={(v) => updateItem(it.id, { precioUnitario: v })}
-                        currency={currency}
-                        currencySymbol={currencySymbol}
-                      />
-                      <span className="absolute left-0 top-full mt-1 text-sm font-semibold text-emerald-600 whitespace-nowrap">
-                        {formatMoney(totalLinea, currency)}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeItem(it.id)}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-red-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50"
-                      aria-label="Eliminar"
-                    >
-                      <Trash2 size={20} />
-                    </button>
                   </motion.div>
                 );
               })}
