@@ -33,6 +33,8 @@ export default function FormSection({
   anexos,
   setAnexos,
   errores = {},
+  numeroProforma,
+  setNumeroProforma,
 }) {
   return (
     <section className="w-full p-4">
@@ -134,20 +136,40 @@ export default function FormSection({
             <span className="font-semibold text-lg text-slate-700">Detalles de cotización</span>
           </div>
           <div className="flex flex-col md:flex-row gap-6 items-center justify-around ">
-            <div className="w-full md:w-1/3">
+            <div className="w-full md:w-1/4">
               <label className="block mb-2 text-sm font-medium text-slate-700">Moneda</label>
               <CustomSelect value={moneda} onChange={setMoneda} />
             </div>
-            <div className="w-full md:w-1/3">
+            <div className="w-full md:w-1/4">
               <label className="block mb-2 text-sm font-medium text-slate-700">Tipo de cambio</label>
               <div className="relative w-full">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">₡</span>
-                <input type="text" value={tipoCambio} onChange={(e) => setTipoCambio(e.target.value.replace(/\D/g, ""))} disabled={moneda !== "USD"} placeholder="520" className="w-full rounded-md border border-slate-200 bg-white pl-8 pr-4 py-2 text-sm text-slate-700 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100" />
+                <input type="text" value={tipoCambio} onChange={(e) => setTipoCambio(e.target.value.replace(/[^0-9]/g, ""))} disabled={moneda !== "USD"} placeholder="520" className="w-full rounded-md border border-slate-200 bg-white pl-8 pr-4 py-2 text-sm text-slate-700 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 disabled:bg-slate-100" />
               </div>
             </div>
-            <div className="md:w-1/3 w-full flex flex-col items-start">
-              <label className="mb-2 text-sm font-medium text-slate-700">Aplicar IVA</label>
-              <Toggle checked={aplicarIVA} onChange={setAplicarIVA} />
+            <div className="md:w-1/2 w-full flex flex-col items-start">
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex flex-col">
+                  <label className="mb-2 text-sm font-medium text-slate-700">Número Proforma</label>
+                  <div className="flex items-center">
+                    <span className="px-4 py-2 rounded-l-md bg-slate-100 border border-r-0 border-slate-200 text-slate-600 font-mono text-sm">#SEN</span>
+                    <input
+                      type="text"
+                      value={numeroProforma}
+                      onChange={e => setNumeroProforma(e.target.value.replace(/[^0-9]/g, ""))}
+                      className="w-24 rounded-r-md border border-slate-200 bg-white px-4 py-2 font-mono text-slate-700 text-sm focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100 -ml-1"
+                      placeholder="00001"
+                      maxLength={5}
+                      pattern="[0-9]{5}"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col items-start ml-6">
+                  <label className="mb-2 text-sm font-medium text-slate-700">Aplicar IVA</label>
+                  <Toggle checked={aplicarIVA} onChange={setAplicarIVA} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
