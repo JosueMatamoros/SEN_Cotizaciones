@@ -1,30 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useReceptor, useItems } from "./hooks/useFormLogic";
 import FormSection from "./section/form";
 import PreviewSection from "./section/preview";
 import { generarProformaPDF } from "./pdf/generarProformaPDF";
 import { NavbarSimple } from "./components/shared/Header";
+import { ConfirmDialog } from "./components/shared/ConfirmDialog";
+import { useLocalStorage, useClearFormData, getFromLocalStorage } from "./hooks/useLocalStorage";
 // import { createProforma } from "./services/api";
 
 export default function App() {
-  const [tab, setTab] = useState("cliente");
+  // Inicializar estados con datos del localStorage
+  const [tab, setTab] = useState(() => getFromLocalStorage("proforma_tab", "cliente"));
   const [asesorOpen, setAsesorOpen] = useState(false);
 
-  const [cliente, setCliente] = useState({
+  const [cliente, setCliente] = useState(() => getFromLocalStorage("proforma_cliente", {
     nombre: "",
     numero: "",
     correo: "",
     direccion: "",
-  });
+  }));
 
-  const [empresa, setEmpresa] = useState({
+  const [empresa, setEmpresa] = useState(() => getFromLocalStorage("proforma_empresa", {
     nombreEmpresa: "",
     correo: "",
     direccion: "",
     numeroEmpresa: "",
     asesorNombre: "",
     asesorNumero: "",
-  });
+  }));
 
   const receptor = useReceptor(tab, cliente, empresa);
 
@@ -34,9 +37,34 @@ export default function App() {
     servicios,
     setServicios,
   } = useItems(
-    [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }],
-    [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }]
+    getFromLocalStorage("proforma_productos", [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }]),
+    getFromLocalStorage("proforma_servicios", [{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }])
   );
+
+  const [moneda, setMoneda] = useState(() => getFromLocalStorage("proforma_moneda", "CRC"));
+  const [tipoCambio, setTipoCambio] = useState(() => getFromLocalStorage("proforma_tipoCambio", ""));
+  const [aplicarIVA, setAplicarIVA] = useState(() => getFromLocalStorage("proforma_aplicarIVA", false));
+  const [nota, setNota] = useState(() => getFromLocalStorage("proforma_nota", ""));
+  const [anexos, setAnexos] = useState(() => getFromLocalStorage("proforma_anexos", ""));
+
+  const [guardando, setGuardando] = useState(false);
+  const [toast, setToast] = useState({ open: false, message: "", type: "success" });
+  const [errores, setErrores] = useState({});
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Implementar localStorage para cada estado (solo guardar cambios)
+  useLocalStorage("proforma_tab", tab, setTab);
+  useLocalStorage("proforma_cliente", cliente, setCliente);
+  useLocalStorage("proforma_empresa", empresa, setEmpresa);
+  useLocalStorage("proforma_productos", productos, setProductos);
+  useLocalStorage("proforma_servicios", servicios, setServicios);
+  useLocalStorage("proforma_moneda", moneda, setMoneda);
+  useLocalStorage("proforma_tipoCambio", tipoCambio, setTipoCambio);
+  useLocalStorage("proforma_aplicarIVA", aplicarIVA, setAplicarIVA);
+  useLocalStorage("proforma_nota", nota, setNota);
+  useLocalStorage("proforma_anexos", anexos, setAnexos);
+
+  const clearFormData = useClearFormData();
 
   // Función para limpiar errores de items cuando hay cambios
   const clearItemsError = () => {
@@ -59,16 +87,6 @@ export default function App() {
     setServicios(updateFn);
     clearItemsError();
   };
-
-  const [moneda, setMoneda] = useState("CRC");
-  const [tipoCambio, setTipoCambio] = useState("");
-  const [aplicarIVA, setAplicarIVA] = useState(false);
-  const [nota, setNota] = useState("");
-  const [anexos, setAnexos] = useState("");
-
-  const [guardando, setGuardando] = useState(false);
-  const [toast, setToast] = useState({ open: false, message: "", type: "success" });
-  const [errores, setErrores] = useState({});
 
   const toInt = (v, fallback) => {
     const n = Number.parseInt(String(v ?? ""), 10);
@@ -95,6 +113,47 @@ export default function App() {
       }));
 
     return [...prod, ...serv];
+  };
+
+
+  const handleLimpiarClick = () => {
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmLimpiar = () => {
+    setConfirmOpen(false);
+    handleLimpiarFormulario();
+  };
+
+  const handleLimpiarFormulario = () => {
+    // Limpiar localStorage
+    clearFormData();
+
+    // Resetear estados a valores iniciales
+    setTab("cliente");
+    setCliente({
+      nombre: "",
+      numero: "",
+      correo: "",
+      direccion: "",
+    });
+    setEmpresa({
+      nombreEmpresa: "",
+      correo: "",
+      direccion: "",
+      numeroEmpresa: "",
+      asesorNombre: "",
+      asesorNumero: "",
+    });
+    setProductos([{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }]);
+    setServicios([{ id: crypto.randomUUID(), nombre: "", cantidad: "1", precioUnitario: "0" }]);
+    setMoneda("CRC");
+    setTipoCambio("");
+    setAplicarIVA(false);
+    setNota("");
+    setAnexos("");
+    setErrores({});
+
   };
 
   const handleDescargar = async () => {
@@ -189,7 +248,16 @@ export default function App() {
 
   return (
     <div className="w-full ">
-      <NavbarSimple onDescargar={handleDescargar} guardando={guardando} />
+      <NavbarSimple
+        onDescargar={handleDescargar}
+        onLimpiar={handleLimpiarClick}
+        guardando={guardando}
+      />
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmLimpiar}
+      />
 
       <div className="w-full flex flex-col-reverse lg:flex-row">
         <PreviewSection
